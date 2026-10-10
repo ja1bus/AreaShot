@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 画面に表示する文字列（英語。既定の言語で、日本語以外の環境ではこれを使う）。キーは Strings.ja.resx と必ずそろえる。 -->
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppUnexpectedErrorFormat" xml:space="preserve">
+    <value>An unexpected error occurred.
+{0}: {1}
+
+Details: {2}</value>
+  </data>
+  <data name="AppWillExit" xml:space="preserve">
+    <value>AreaShot will now exit.</value>
+  </data>
+  <data name="SaveTooltipFormat" xml:space="preserve">
+    <value>Save to: {0}</value>
+  </data>
+  <data name="SettingsCorruptBalloon" xml:space="preserve">
+    <value>The settings file could not be read, so AreaShot started with the default settings.</value>
+  </data>
+  <data name="SettingsCorruptBackupFormat" xml:space="preserve">
+    <value>Original file: {0}</value>
+  </data>
+  <data name="HotkeyFailedBalloonTitle" xml:space="preserve">
+    <value>AreaShot - Cannot register the shortcut</value>
+  </data>
+  <data name="HotkeyFailedBalloonHint" xml:space="preserve">
+    <value>Right-click the notification area icon and change it in Settings.</value>
+  </data>
+  <data name="StartedBalloonFormat" xml:space="preserve">
+    <value>AreaShot is running in the notification area. Press {0} to start a capture.</value>
+  </data>
+  <data name="CaptureScreenFailed" xml:space="preserve">
+    <value>Could not capture the screen (the screen cannot be captured while it is locked, for example).</value>
+  </data>
+  <data name="CaptureCancelledDisplayChanged" xml:space="preserve">
+    <value>The capture was cancelled because the display configuration changed. Please try again.</value>
+  </data>
+  <data name="ComposeFailed" xml:space="preserve">
+    <value>Could not compose the image.</value>
+  </data>
+  <data name="SettingsSaveFailedFormat" xml:space="preserve">
+    <value>Could not save the settings file (the settings stay in effect until AreaShot exits): {0}</value>
+  </data>
+  <data name="HotkeyRegisterFailedFormat" xml:space="preserve">
+    <value>Could not register the shortcut: {0}. Please choose a different combination.</value>
+  </data>
+  <data name="AutoStartFailedFormat" xml:space="preserve">
+    <value>Could not configure automatic startup: {0}</value>
+  </data>
+  <data name="AlreadyRunning" xml:space="preserve">
+    <value>AreaShot is already running (in the notification area).</value>
+  </data>
+  <data name="RestartPrompt" xml:space="preserve">
+    <value>The new language will be applied after AreaShot restarts.
+
+Restart AreaShot now?</value>
+  </data>
+  <data name="RestartPromptOpenWindows" xml:space="preserve">
+    <value>Open capture and image editor windows will be closed, and images you have not saved will be lost.</value>
+  </data>
+  <data name="RestartFailed" xml:space="preserve">
+    <value>AreaShot could not be restarted. Please exit AreaShot and start it again.</value>
+  </data>
+  <data name="TrayCapture" xml:space="preserve">
+    <value>Start capture</value>
+  </data>
+  <data name="TraySettings" xml:space="preserve">
+    <value>Settings...</value>
+  </data>
+  <data name="TrayExit" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+  <data name="TrayHotkeyFailedFormat" xml:space="preserve">
+    <value>{0} failed</value>
+  </data>
+  <data name="HotkeyUnassigned" xml:space="preserve">
+    <value>Not assigned (you can capture from the notification area menu)</value>
+  </data>
+  <data name="HotkeyRegisteredFormat" xml:space="preserve">
+    <value>{0} is registered</value>
+  </data>
+  <data name="HotkeySuspended" xml:space="preserve">
+    <value>Typing (temporarily disabled)</value>
+  </data>
+  <data name="HotkeyInUseFormat" xml:space="preserve">
+    <value>{0} cannot be registered because another app or Windows is using it</value>
+  </data>
+  <data name="HotkeyErrorFormat" xml:space="preserve">
+    <value>Could not register {0} (error {1})</value>
+  </data>
+  <data name="OverlayTitle" xml:space="preserve">
+    <value>AreaShot - Select an area</value>
+  </data>
+  <data name="OverlayHintLabel" xml:space="preserve">
+    <value>Hold and release:</value>
+  </data>
+  <data name="ReleaseKeyNone" xml:space="preserve">
+    <value>Not assigned</value>
+  </data>
+  <data name="QuickActionCopy" xml:space="preserve">
+    <value>Copy to clipboard</value>
+  </data>
+  <data name="QuickActionEdit" xml:space="preserve">
+    <value>Open in image editor</value>
+  </data>
+  <data name="QuickActionSave" xml:space="preserve">
+    <value>Save to folder</value>
+  </data>
+  <data name="QuickActionSaveAs" xml:space="preserve">
+    <value>Save as</value>
+  </data>
+  <data name="QuickShortCopy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="QuickShortEdit" xml:space="preserve">
+    <value>Editor</value>
+  </data>
+  <data name="QuickShortSave" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="QuickShortSaveAs" xml:space="preserve">
+    <value>Save as</value>
+  </data>
+  <data name="ShortcutEmpty" xml:space="preserve">
+    <value>No shortcut is set</value>
+  </data>
+  <data name="ShortcutModifierOnly" xml:space="preserve">
+    <value>A shortcut cannot consist of modifier keys only</value>
+  </data>
+  <data name="ShortcutRequiresModifier" xml:space="preserve">
+    <value>Combine the key with Ctrl, Alt or Win (F1–F24, PrintScreen and similar keys can be used alone)</value>
+  </data>
+  <data name="TokenYear4" xml:space="preserve">
+    <value>4-digit year</value>
+  </data>
+  <data name="TokenYear2" xml:space="preserve">
+    <value>2-digit year</value>
+  </data>
+  <data name="TokenMonth" xml:space="preserve">
+    <value>month</value>
+  </data>
+  <data name="TokenDay" xml:space="preserve">
+    <value>day</value>
+  </data>
+  <data name="TokenHour" xml:space="preserve">
+    <value>hour (24h)</value>
+  </data>
+  <data name="TokenMinute" xml:space="preserve">
+    <value>minute</value>
+  </data>
+  <data name="TokenSecond" xml:space="preserve">
+    <value>second</value>
+  </data>
+  <data name="TemplateEmpty" xml:space="preserve">
+    <value>Enter a file name.</value>
+  </data>
+  <data name="TemplateUnknownTokenFormat" xml:space="preserve">
+    <value>Unknown variable: {0}</value>
+  </data>
+  <data name="TemplateInvalidCharsFormat" xml:space="preserve">
+    <value>The file name contains characters that cannot be used: {0}</value>
+  </data>
+  <data name="CharTab" xml:space="preserve">
+    <value>Tab</value>
+  </data>
+  <data name="CharControlFormat" xml:space="preserve">
+    <value>control character (0x{0})</value>
+  </data>
+  <data name="UniqueNameExhaustedFormat" xml:space="preserve">
+    <value>Too many files with the same name: {0}</value>
+  </data>
+  <data name="ColorRed" xml:space="preserve">
+    <value>Red</value>
+  </data>
+  <data name="ColorBlack" xml:space="preserve">
+    <value>Black</value>
+  </data>
+  <data name="ColorBlue" xml:space="preserve">
+    <value>Blue</value>
+  </data>
+  <data name="ColorGreen" xml:space="preserve">
+    <value>Green</value>
+  </data>
+  <data name="ColorYellow" xml:space="preserve">
+    <value>Yellow</value>
+  </data>
+  <data name="ColorWhite" xml:space="preserve">
+    <value>White</value>
+  </data>
+  <data name="CaptureResultTitle" xml:space="preserve">
+    <value>AreaShot - Capture</value>
+  </data>
+  <data name="ResultClose" xml:space="preserve">
+    <value>Close (Esc)</value>
+  </data>
+  <data name="ResultCopy" xml:space="preserve">
+    <value>_Copy to clipboard</value>
+  </data>
+  <data name="ResultEdit" xml:space="preserve">
+    <value>Open in image _editor</value>
+  </data>
+  <data name="ResultSave" xml:space="preserve">
+    <value>_Save to folder</value>
+  </data>
+  <data name="ResultSaveAs" xml:space="preserve">
+    <value>Save _as...</value>
+  </data>
+  <data name="ResultRetry" xml:space="preserve">
+    <value>_Retry capture</value>
+  </data>
+  <data name="EditorTitle" xml:space="preserve">
+    <value>AreaShot - Image Editor</value>
+  </data>
+  <data name="ToolSelect" xml:space="preserve">
+    <value>Select</value>
+  </data>
+  <data name="ToolSelectTip" xml:space="preserve">
+    <value>Select (drag to move, drag the handles to resize)</value>
+  </data>
+  <data name="ToolLine" xml:space="preserve">
+    <value>Line</value>
+  </data>
+  <data name="ToolRectangle" xml:space="preserve">
+    <value>Rectangle</value>
+  </data>
+  <data name="ToolArrow" xml:space="preserve">
+    <value>Arrow</value>
+  </data>
+  <data name="ToolText" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="ToolTextTip" xml:space="preserve">
+    <value>Click to type (Enter to finish, Shift+Enter for a new line, double-click to edit again)</value>
+  </data>
+  <data name="ToolMosaic" xml:space="preserve">
+    <value>Mosaic</value>
+  </data>
+  <data name="EditorColor" xml:space="preserve">
+    <value>Color</value>
+  </data>
+  <data name="EditorWidth" xml:space="preserve">
+    <value>Width</value>
+  </data>
+  <data name="EditorFont" xml:space="preserve">
+    <value>Font</value>
+  </data>
+  <data name="EditorFontSize" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="EditorUndo" xml:space="preserve">
+    <value>Undo</value>
+  </data>
+  <data name="EditorUndoTip" xml:space="preserve">
+    <value>Undo (Ctrl+Z)</value>
+  </data>
+  <data name="EditorRedo" xml:space="preserve">
+    <value>Redo</value>
+  </data>
+  <data name="EditorRedoTip" xml:space="preserve">
+    <value>Redo (Ctrl+Y)</value>
+  </data>
+  <data name="EditorDelete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="EditorDeleteTip" xml:space="preserve">
+    <value>Delete the selected object (Delete)</value>
+  </data>
+  <data name="EditorClearAll" xml:space="preserve">
+    <value>Clear all</value>
+  </data>
+  <data name="EditorClearAllTip" xml:space="preserve">
+    <value>Remove all edits (you can restore them with Undo)</value>
+  </data>
+  <data name="EditorZoom" xml:space="preserve">
+    <value>Zoom</value>
+  </data>
+  <data name="EditorZoomTip" xml:space="preserve">
+    <value>Zoom (you can also use Ctrl+mouse wheel). The size of the saved image does not change.</value>
+  </data>
+  <data name="EditorFit" xml:space="preserve">
+    <value>Fit to window</value>
+  </data>
+  <data name="EditorStatusFormat" xml:space="preserve">
+    <value>{0} × {1} px   Zoom {2}</value>
+  </data>
+  <data name="EditorStatusFitSuffix" xml:space="preserve">
+    <value> (fit to window)</value>
+  </data>
+  <data name="EditorCopy" xml:space="preserve">
+    <value>Copy to clipboard</value>
+  </data>
+  <data name="EditorSave" xml:space="preserve">
+    <value>Save to folder</value>
+  </data>
+  <data name="EditorSaveAs" xml:space="preserve">
+    <value>Save as...</value>
+  </data>
+  <data name="EditorClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>AreaShot - Settings</value>
+  </data>
+  <data name="SettingsGroupSave" xml:space="preserve">
+    <value>Saving</value>
+  </data>
+  <data name="SettingsSaveFolder" xml:space="preserve">
+    <value>Save folder</value>
+  </data>
+  <data name="SettingsBrowse" xml:space="preserve">
+    <value>Browse...</value>
+  </data>
+  <data name="SettingsFileName" xml:space="preserve">
+    <value>File name</value>
+  </data>
+  <data name="SettingsImageType" xml:space="preserve">
+    <value>Image format</value>
+  </data>
+  <data name="SettingsJpegQuality" xml:space="preserve">
+    <value>JPEG quality</value>
+  </data>
+  <data name="SettingsGroupCapture" xml:space="preserve">
+    <value>Capture</value>
+  </data>
+  <data name="SettingsShortcut" xml:space="preserve">
+    <value>Shortcut</value>
+  </data>
+  <data name="SettingsResetDefault" xml:space="preserve">
+    <value>Reset to default</value>
+  </data>
+  <data name="SettingsGroupQuick" xml:space="preserve">
+    <value>After selecting an area</value>
+  </data>
+  <data name="SettingsQuickEnable" xml:space="preserve">
+    <value>Hold a key while releasing the mouse to run an action without the dialog</value>
+  </data>
+  <data name="SettingsQuickHint" xml:space="preserve">
+    <value>Show the key hints on the area selection screen</value>
+  </data>
+  <data name="SettingsQuickStatusOn" xml:space="preserve">
+    <value>The action runs according to the key you hold while releasing the mouse. If you release without holding a key, the dialog appears as usual.</value>
+  </data>
+  <data name="SettingsQuickStatusOff" xml:space="preserve">
+    <value>The dialog always appears when you release the mouse.</value>
+  </data>
+  <data name="SettingsDuplicateKeysFormat" xml:space="preserve">
+    <value>{0} is assigned to more than one action.</value>
+  </data>
+  <data name="ListSeparator" xml:space="preserve">
+    <value>, </value>
+  </data>
+  <data name="QuotedFormat" xml:space="preserve">
+    <value>“{0}”</value>
+  </data>
+  <data name="SettingsGroupOther" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="SettingsAutoStart" xml:space="preserve">
+    <value>Start automatically when I sign in to Windows</value>
+  </data>
+  <data name="SettingsNotify" xml:space="preserve">
+    <value>Show a notification after saving, or after copying with a key held</value>
+  </data>
+  <data name="SettingsLanguage" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="LanguageSystem" xml:space="preserve">
+    <value>Use the Windows display language</value>
+  </data>
+  <data name="SettingsSave" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="SettingsCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="SettingsFolderNoteFormat" xml:space="preserve">
+    <value>If empty: {0} (created if it does not exist)</value>
+  </data>
+  <data name="SettingsTokenHelpFormat" xml:space="preserve">
+    <value>Variables (2 digits except {{yyyy}}): {0}
+The extension is added from the image format. _2, _3, … is appended only when a file with the same name already exists.</value>
+  </data>
+  <data name="SettingsVersionFormat" xml:space="preserve">
+    <value>AreaShot version {0}</value>
+  </data>
+  <data name="SettingsManualLink" xml:space="preserve">
+    <value>User Guide (web)</value>
+  </data>
+  <data name="SettingsManualOpenFailedFormat" xml:space="preserve">
+    <value>Could not open the user guide in your browser.
+{0}
+
+Open this address in your browser:
+{1}</value>
+  </data>
+  <data name="AutoStartDisabledByUser" xml:space="preserve">
+    <value>it is turned off in Startup apps (Settings or Task Manager). Turn on AreaShot there.</value>
+  </data>
+  <data name="AutoStartDisabledByPolicy" xml:space="preserve">
+    <value>it is controlled by your organization's policy and cannot be changed.</value>
+  </data>
+  <data name="SettingsHotkeyWillUnassign" xml:space="preserve">
+    <value>Saving leaves the shortcut unassigned (you can still capture from the notification area menu)</value>
+  </data>
+  <data name="SettingsHotkeyWillRegister" xml:space="preserve">
+    <value>The shortcut is registered when you save</value>
+  </data>
+  <data name="SettingsHotkeyFailedFormat" xml:space="preserve">
+    <value>Registration failed: {0}</value>
+  </data>
+  <data name="SettingsSelectFolderTitle" xml:space="preserve">
+    <value>Select the save folder</value>
+  </data>
+  <data name="SettingsExampleFormat" xml:space="preserve">
+    <value>Example: {0}</value>
+  </data>
+  <data name="SettingsErrorFileNameFormat" xml:space="preserve">
+    <value>File name: {0}</value>
+  </data>
+  <data name="SettingsErrorFolderInvalid" xml:space="preserve">
+    <value>Save folder: the path contains characters that cannot be used.</value>
+  </data>
+  <data name="SettingsErrorShortcutFormat" xml:space="preserve">
+    <value>Shortcut: {0}</value>
+  </data>
+  <data name="SettingsErrorQuickFormat" xml:space="preserve">
+    <value>After selecting an area: {0}</value>
+  </data>
+  <data name="ShortcutBoxTip" xml:space="preserve">
+    <value>Click here, then press the keys (Backspace / Delete to unassign)</value>
+  </data>
+  <data name="ShortcutBoxUnassigned" xml:space="preserve">
+    <value>(Not assigned)</value>
+  </data>
+  <data name="ToastOpenFolder" xml:space="preserve">
+    <value>Click to open the folder</value>
+  </data>
+  <data name="ToastSavedTitle" xml:space="preserve">
+    <value>Saved</value>
+  </data>
+  <data name="ToastSavedFormat" xml:space="preserve">
+    <value>Saved to {0}</value>
+  </data>
+  <data name="ToastCopiedTitle" xml:space="preserve">
+    <value>Copied</value>
+  </data>
+  <data name="ToastCopiedDetail" xml:space="preserve">
+    <value>The captured image was copied to the clipboard.</value>
+  </data>
+  <data name="OutputImageFailed" xml:space="preserve">
+    <value>Could not create the image.</value>
+  </data>
+  <data name="OutputSaveFailedFormat" xml:space="preserve">
+    <value>Could not save the image.
+{0}
+
+Save folder: {1}
+
+Check the save folder in Settings, or use “Save as”.</value>
+  </data>
+  <data name="OutputSaveAsFailedFormat" xml:space="preserve">
+    <value>Could not save the image.
+{0}
+
+{1}</value>
+  </data>
+  <data name="SaveAsTitle" xml:space="preserve">
+    <value>Save as</value>
+  </data>
+  <data name="SaveAsFilter" xml:space="preserve">
+    <value>PNG image (*.png)|*.png|JPEG image (*.jpg;*.jpeg)|*.jpg;*.jpeg</value>
+  </data>
+  <data name="ErrorNoPermission" xml:space="preserve">
+    <value>You do not have permission to write to this location.</value>
+  </data>
+  <data name="ErrorFolderNotFound" xml:space="preserve">
+    <value>The save folder was not found.</value>
+  </data>
+  <data name="ErrorPathTooLong" xml:space="preserve">
+    <value>The path is too long.</value>
+  </data>
+  <data name="ErrorPathInvalid" xml:space="preserve">
+    <value>The save path is not valid.</value>
+  </data>
+  <data name="ClipboardBusy" xml:space="preserve">
+    <value>Could not copy because another app is using the clipboard. Please wait a moment and try again.</value>
+  </data>
+  <data name="AutoStartNoPath" xml:space="preserve">
+    <value>Could not determine the location of the executable.</value>
+  </data>
+</root>

@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 画面に表示する文字列（日本語）。キーは Strings.resx と必ずそろえる。 -->
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppUnexpectedErrorFormat" xml:space="preserve">
+    <value>予期しないエラーが発生しました。
+{0}: {1}
+
+詳細: {2}</value>
+  </data>
+  <data name="AppWillExit" xml:space="preserve">
+    <value>AreaShot を終了します。</value>
+  </data>
+  <data name="SaveTooltipFormat" xml:space="preserve">
+    <value>保存先: {0}</value>
+  </data>
+  <data name="SettingsCorruptBalloon" xml:space="preserve">
+    <value>設定ファイルを読み込めなかったため、既定の設定で起動しました。</value>
+  </data>
+  <data name="SettingsCorruptBackupFormat" xml:space="preserve">
+    <value>元のファイル: {0}</value>
+  </data>
+  <data name="HotkeyFailedBalloonTitle" xml:space="preserve">
+    <value>AreaShot - ショートカットを登録できません</value>
+  </data>
+  <data name="HotkeyFailedBalloonHint" xml:space="preserve">
+    <value>タスクトレイの右クリック →「設定」から変更してください。</value>
+  </data>
+  <data name="StartedBalloonFormat" xml:space="preserve">
+    <value>タスクトレイに常駐しました。{0} でキャプチャーを開始します。</value>
+  </data>
+  <data name="CaptureScreenFailed" xml:space="preserve">
+    <value>画面を取得できませんでした（画面のロック中などは取得できません）。</value>
+  </data>
+  <data name="CaptureCancelledDisplayChanged" xml:space="preserve">
+    <value>画面の構成が変わったため、キャプチャーを中止しました。もう一度お試しください。</value>
+  </data>
+  <data name="ComposeFailed" xml:space="preserve">
+    <value>画像を合成できませんでした。</value>
+  </data>
+  <data name="SettingsSaveFailedFormat" xml:space="preserve">
+    <value>設定ファイルを保存できませんでした（今回の起動中は有効です）: {0}</value>
+  </data>
+  <data name="HotkeyRegisterFailedFormat" xml:space="preserve">
+    <value>ショートカットの登録に失敗しました: {0}。別の組み合わせを指定してください。</value>
+  </data>
+  <data name="AutoStartFailedFormat" xml:space="preserve">
+    <value>自動起動を設定できませんでした: {0}</value>
+  </data>
+  <data name="AlreadyRunning" xml:space="preserve">
+    <value>AreaShot は既に起動しています（タスクトレイに常駐中）。</value>
+  </data>
+  <data name="RestartPrompt" xml:space="preserve">
+    <value>言語の変更は AreaShot の再起動後に反映されます。
+
+今すぐ再起動しますか？</value>
+  </data>
+  <data name="RestartPromptOpenWindows" xml:space="preserve">
+    <value>開いているキャプチャー画面とイメージエディタは閉じられ、保存していない画像は失われます。</value>
+  </data>
+  <data name="RestartFailed" xml:space="preserve">
+    <value>AreaShot を再起動できませんでした。終了してから起動し直してください。</value>
+  </data>
+  <data name="TrayCapture" xml:space="preserve">
+    <value>キャプチャー開始</value>
+  </data>
+  <data name="TraySettings" xml:space="preserve">
+    <value>設定...</value>
+  </data>
+  <data name="TrayExit" xml:space="preserve">
+    <value>終了</value>
+  </data>
+  <data name="TrayHotkeyFailedFormat" xml:space="preserve">
+    <value>{0} 登録失敗</value>
+  </data>
+  <data name="HotkeyUnassigned" xml:space="preserve">
+    <value>未割当（タスクトレイのメニューからキャプチャーできます）</value>
+  </data>
+  <data name="HotkeyRegisteredFormat" xml:space="preserve">
+    <value>{0} を登録しました</value>
+  </data>
+  <data name="HotkeySuspended" xml:space="preserve">
+    <value>入力中（一時的に解除しています）</value>
+  </data>
+  <data name="HotkeyInUseFormat" xml:space="preserve">
+    <value>{0} は他のアプリまたは Windows が使用中のため登録できません</value>
+  </data>
+  <data name="HotkeyErrorFormat" xml:space="preserve">
+    <value>{0} を登録できませんでした（エラー {1}）</value>
+  </data>
+  <data name="OverlayTitle" xml:space="preserve">
+    <value>AreaShot - 範囲を選択</value>
+  </data>
+  <data name="OverlayHintLabel" xml:space="preserve">
+    <value>押しながら離す:</value>
+  </data>
+  <data name="ReleaseKeyNone" xml:space="preserve">
+    <value>割り当てない</value>
+  </data>
+  <data name="QuickActionCopy" xml:space="preserve">
+    <value>クリップボードにコピー</value>
+  </data>
+  <data name="QuickActionEdit" xml:space="preserve">
+    <value>イメージエディタで開く</value>
+  </data>
+  <data name="QuickActionSave" xml:space="preserve">
+    <value>保存先に保存</value>
+  </data>
+  <data name="QuickActionSaveAs" xml:space="preserve">
+    <value>名前を付けて保存</value>
+  </data>
+  <data name="QuickShortCopy" xml:space="preserve">
+    <value>コピー</value>
+  </data>
+  <data name="QuickShortEdit" xml:space="preserve">
+    <value>エディタ</value>
+  </data>
+  <data name="QuickShortSave" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="QuickShortSaveAs" xml:space="preserve">
+    <value>名前を付けて保存</value>
+  </data>
+  <data name="ShortcutEmpty" xml:space="preserve">
+    <value>ショートカットが未設定です</value>
+  </data>
+  <data name="ShortcutModifierOnly" xml:space="preserve">
+    <value>修飾キーだけのショートカットは使えません</value>
+  </data>
+  <data name="ShortcutRequiresModifier" xml:space="preserve">
+    <value>Ctrl・Alt・Win のいずれかと組み合わせてください（F1～F24・PrintScreen などは単独可）</value>
+  </data>
+  <data name="TokenYear4" xml:space="preserve">
+    <value>西暦4桁</value>
+  </data>
+  <data name="TokenYear2" xml:space="preserve">
+    <value>西暦下2桁</value>
+  </data>
+  <data name="TokenMonth" xml:space="preserve">
+    <value>月</value>
+  </data>
+  <data name="TokenDay" xml:space="preserve">
+    <value>日</value>
+  </data>
+  <data name="TokenHour" xml:space="preserve">
+    <value>時(24h)</value>
+  </data>
+  <data name="TokenMinute" xml:space="preserve">
+    <value>分</value>
+  </data>
+  <data name="TokenSecond" xml:space="preserve">
+    <value>秒</value>
+  </data>
+  <data name="TemplateEmpty" xml:space="preserve">
+    <value>ファイル名を入力してください。</value>
+  </data>
+  <data name="TemplateUnknownTokenFormat" xml:space="preserve">
+    <value>使用できない変数です: {0}</value>
+  </data>
+  <data name="TemplateInvalidCharsFormat" xml:space="preserve">
+    <value>ファイル名に使えない文字が含まれています: {0}</value>
+  </data>
+  <data name="CharTab" xml:space="preserve">
+    <value>タブ</value>
+  </data>
+  <data name="CharControlFormat" xml:space="preserve">
+    <value>制御文字(0x{0})</value>
+  </data>
+  <data name="UniqueNameExhaustedFormat" xml:space="preserve">
+    <value>同じ名前のファイルが多すぎます: {0}</value>
+  </data>
+  <data name="ColorRed" xml:space="preserve">
+    <value>赤</value>
+  </data>
+  <data name="ColorBlack" xml:space="preserve">
+    <value>黒</value>
+  </data>
+  <data name="ColorBlue" xml:space="preserve">
+    <value>青</value>
+  </data>
+  <data name="ColorGreen" xml:space="preserve">
+    <value>緑</value>
+  </data>
+  <data name="ColorYellow" xml:space="preserve">
+    <value>黄</value>
+  </data>
+  <data name="ColorWhite" xml:space="preserve">
+    <value>白</value>
+  </data>
+  <data name="CaptureResultTitle" xml:space="preserve">
+    <value>AreaShot - キャプチャー</value>
+  </data>
+  <data name="ResultClose" xml:space="preserve">
+    <value>閉じる(Esc)</value>
+  </data>
+  <data name="ResultCopy" xml:space="preserve">
+    <value>クリップボードにコピー(_C)</value>
+  </data>
+  <data name="ResultEdit" xml:space="preserve">
+    <value>イメージエディタで開く(_E)</value>
+  </data>
+  <data name="ResultSave" xml:space="preserve">
+    <value>保存先に保存(_S)</value>
+  </data>
+  <data name="ResultSaveAs" xml:space="preserve">
+    <value>名前を付けて保存(_A)...</value>
+  </data>
+  <data name="ResultRetry" xml:space="preserve">
+    <value>もう一度キャプチャーする(_R)</value>
+  </data>
+  <data name="EditorTitle" xml:space="preserve">
+    <value>AreaShot - イメージエディタ</value>
+  </data>
+  <data name="ToolSelect" xml:space="preserve">
+    <value>選択</value>
+  </data>
+  <data name="ToolSelectTip" xml:space="preserve">
+    <value>選択（ドラッグで移動・つまみで変形）</value>
+  </data>
+  <data name="ToolLine" xml:space="preserve">
+    <value>直線</value>
+  </data>
+  <data name="ToolRectangle" xml:space="preserve">
+    <value>四角形</value>
+  </data>
+  <data name="ToolArrow" xml:space="preserve">
+    <value>矢印</value>
+  </data>
+  <data name="ToolText" xml:space="preserve">
+    <value>文字</value>
+  </data>
+  <data name="ToolTextTip" xml:space="preserve">
+    <value>クリックして入力（Enter で確定、Shift+Enter で改行、ダブルクリックで再編集）</value>
+  </data>
+  <data name="ToolMosaic" xml:space="preserve">
+    <value>モザイク</value>
+  </data>
+  <data name="EditorColor" xml:space="preserve">
+    <value>色</value>
+  </data>
+  <data name="EditorWidth" xml:space="preserve">
+    <value>線幅</value>
+  </data>
+  <data name="EditorFont" xml:space="preserve">
+    <value>フォント</value>
+  </data>
+  <data name="EditorFontSize" xml:space="preserve">
+    <value>文字サイズ</value>
+  </data>
+  <data name="EditorUndo" xml:space="preserve">
+    <value>Undo</value>
+  </data>
+  <data name="EditorUndoTip" xml:space="preserve">
+    <value>元に戻す (Ctrl+Z)</value>
+  </data>
+  <data name="EditorRedo" xml:space="preserve">
+    <value>Redo</value>
+  </data>
+  <data name="EditorRedoTip" xml:space="preserve">
+    <value>やり直し (Ctrl+Y)</value>
+  </data>
+  <data name="EditorDelete" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="EditorDeleteTip" xml:space="preserve">
+    <value>選択したオブジェクトを削除 (Delete)</value>
+  </data>
+  <data name="EditorClearAll" xml:space="preserve">
+    <value>全て削除</value>
+  </data>
+  <data name="EditorClearAllTip" xml:space="preserve">
+    <value>すべての編集を削除（Undo で復元できます）</value>
+  </data>
+  <data name="EditorZoom" xml:space="preserve">
+    <value>表示</value>
+  </data>
+  <data name="EditorZoomTip" xml:space="preserve">
+    <value>表示倍率（Ctrl+マウスホイールでも変更できます）。保存する画像の大きさは変わりません。</value>
+  </data>
+  <data name="EditorFit" xml:space="preserve">
+    <value>ウィンドウに合わせる</value>
+  </data>
+  <data name="EditorStatusFormat" xml:space="preserve">
+    <value>{0} × {1} px　表示 {2}</value>
+  </data>
+  <data name="EditorStatusFitSuffix" xml:space="preserve">
+    <value>（ウィンドウに合わせる）</value>
+  </data>
+  <data name="EditorCopy" xml:space="preserve">
+    <value>クリップボードにコピー</value>
+  </data>
+  <data name="EditorSave" xml:space="preserve">
+    <value>保存先に保存</value>
+  </data>
+  <data name="EditorSaveAs" xml:space="preserve">
+    <value>名前を付けて保存...</value>
+  </data>
+  <data name="EditorClose" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>AreaShot - 設定</value>
+  </data>
+  <data name="SettingsGroupSave" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="SettingsSaveFolder" xml:space="preserve">
+    <value>保存フォルダ</value>
+  </data>
+  <data name="SettingsBrowse" xml:space="preserve">
+    <value>参照...</value>
+  </data>
+  <data name="SettingsFileName" xml:space="preserve">
+    <value>ファイル名</value>
+  </data>
+  <data name="SettingsImageType" xml:space="preserve">
+    <value>画像形式</value>
+  </data>
+  <data name="SettingsJpegQuality" xml:space="preserve">
+    <value>JPEG 品質</value>
+  </data>
+  <data name="SettingsGroupCapture" xml:space="preserve">
+    <value>キャプチャー</value>
+  </data>
+  <data name="SettingsShortcut" xml:space="preserve">
+    <value>ショートカット</value>
+  </data>
+  <data name="SettingsResetDefault" xml:space="preserve">
+    <value>既定に戻す</value>
+  </data>
+  <data name="SettingsGroupQuick" xml:space="preserve">
+    <value>範囲選択の後の操作</value>
+  </data>
+  <data name="SettingsQuickEnable" xml:space="preserve">
+    <value>キーを押しながらマウスを離すと、ダイアログを出さずに実行する</value>
+  </data>
+  <data name="SettingsQuickHint" xml:space="preserve">
+    <value>範囲選択の画面にキーの案内を表示する</value>
+  </data>
+  <data name="SettingsQuickStatusOn" xml:space="preserve">
+    <value>範囲を選んでマウスを離すときに押していたキーで実行します。キーを押さずに離すと、これまでどおりダイアログを出します。</value>
+  </data>
+  <data name="SettingsQuickStatusOff" xml:space="preserve">
+    <value>マウスを離すと、いつもダイアログを出します。</value>
+  </data>
+  <data name="SettingsDuplicateKeysFormat" xml:space="preserve">
+    <value>{0} が複数の操作に割り当てられています。</value>
+  </data>
+  <data name="ListSeparator" xml:space="preserve">
+    <value>、</value>
+  </data>
+  <data name="QuotedFormat" xml:space="preserve">
+    <value>「{0}」</value>
+  </data>
+  <data name="SettingsGroupOther" xml:space="preserve">
+    <value>その他</value>
+  </data>
+  <data name="SettingsAutoStart" xml:space="preserve">
+    <value>Windows ログイン時に自動起動する</value>
+  </data>
+  <data name="SettingsNotify" xml:space="preserve">
+    <value>保存したとき・キーを押しながらコピーしたときに通知を表示する</value>
+  </data>
+  <data name="SettingsLanguage" xml:space="preserve">
+    <value>言語 (Language)</value>
+  </data>
+  <data name="LanguageSystem" xml:space="preserve">
+    <value>Windows の表示言語に合わせる</value>
+  </data>
+  <data name="SettingsSave" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="SettingsCancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="SettingsFolderNoteFormat" xml:space="preserve">
+    <value>空欄の場合: {0}（無ければ作成します）</value>
+  </data>
+  <data name="SettingsTokenHelpFormat" xml:space="preserve">
+    <value>使える変数（{{yyyy}} 以外は 2 桁）: {0}
+拡張子は画像形式から付きます。同名のファイルがある場合だけ末尾に _2, _3 … を付けます。</value>
+  </data>
+  <data name="SettingsVersionFormat" xml:space="preserve">
+    <value>AreaShot バージョン {0}</value>
+  </data>
+  <data name="SettingsManualLink" xml:space="preserve">
+    <value>取扱説明書（Web）</value>
+  </data>
+  <data name="SettingsManualOpenFailedFormat" xml:space="preserve">
+    <value>取扱説明書をブラウザーで開けませんでした。
+{0}
+
+次のアドレスをブラウザーで開いてください:
+{1}</value>
+  </data>
+  <data name="AutoStartDisabledByUser" xml:space="preserve">
+    <value>［スタートアップ アプリ］（設定またはタスク マネージャー）で無効になっています。そこで AreaShot を有効にしてください。</value>
+  </data>
+  <data name="AutoStartDisabledByPolicy" xml:space="preserve">
+    <value>組織のポリシーで管理されているため変更できません。</value>
+  </data>
+  <data name="SettingsHotkeyWillUnassign" xml:space="preserve">
+    <value>保存すると未割当になります（タスクトレイのメニューからキャプチャーできます）</value>
+  </data>
+  <data name="SettingsHotkeyWillRegister" xml:space="preserve">
+    <value>保存すると登録します</value>
+  </data>
+  <data name="SettingsHotkeyFailedFormat" xml:space="preserve">
+    <value>登録失敗: {0}</value>
+  </data>
+  <data name="SettingsSelectFolderTitle" xml:space="preserve">
+    <value>保存フォルダを選択</value>
+  </data>
+  <data name="SettingsExampleFormat" xml:space="preserve">
+    <value>例: {0}</value>
+  </data>
+  <data name="SettingsErrorFileNameFormat" xml:space="preserve">
+    <value>ファイル名: {0}</value>
+  </data>
+  <data name="SettingsErrorFolderInvalid" xml:space="preserve">
+    <value>保存フォルダ: パスに使えない文字が含まれています。</value>
+  </data>
+  <data name="SettingsErrorShortcutFormat" xml:space="preserve">
+    <value>ショートカット: {0}</value>
+  </data>
+  <data name="SettingsErrorQuickFormat" xml:space="preserve">
+    <value>範囲選択の後の操作: {0}</value>
+  </data>
+  <data name="ShortcutBoxTip" xml:space="preserve">
+    <value>ここをクリックしてからキーを押してください（Backspace / Delete で未割当）</value>
+  </data>
+  <data name="ShortcutBoxUnassigned" xml:space="preserve">
+    <value>（未割当）</value>
+  </data>
+  <data name="ToastOpenFolder" xml:space="preserve">
+    <value>クリックでフォルダを開く</value>
+  </data>
+  <data name="ToastSavedTitle" xml:space="preserve">
+    <value>保存しました</value>
+  </data>
+  <data name="ToastSavedFormat" xml:space="preserve">
+    <value>{0} に保存しました</value>
+  </data>
+  <data name="ToastCopiedTitle" xml:space="preserve">
+    <value>コピーしました</value>
+  </data>
+  <data name="ToastCopiedDetail" xml:space="preserve">
+    <value>キャプチャーした画像をクリップボードにコピーしました</value>
+  </data>
+  <data name="OutputImageFailed" xml:space="preserve">
+    <value>画像を作成できませんでした。</value>
+  </data>
+  <data name="OutputSaveFailedFormat" xml:space="preserve">
+    <value>保存できませんでした。
+{0}
+
+保存先: {1}
+
+設定画面で保存フォルダを確認するか、「名前を付けて保存」をお使いください。</value>
+  </data>
+  <data name="OutputSaveAsFailedFormat" xml:space="preserve">
+    <value>保存できませんでした。
+{0}
+
+{1}</value>
+  </data>
+  <data name="SaveAsTitle" xml:space="preserve">
+    <value>名前を付けて保存</value>
+  </data>
+  <data name="SaveAsFilter" xml:space="preserve">
+    <value>PNG 画像 (*.png)|*.png|JPEG 画像 (*.jpg;*.jpeg)|*.jpg;*.jpeg</value>
+  </data>
+  <data name="ErrorNoPermission" xml:space="preserve">
+    <value>書き込む権限がありません。</value>
+  </data>
+  <data name="ErrorFolderNotFound" xml:space="preserve">
+    <value>保存先のフォルダが見つかりません。</value>
+  </data>
+  <data name="ErrorPathTooLong" xml:space="preserve">
+    <value>パスが長すぎます。</value>
+  </data>
+  <data name="ErrorPathInvalid" xml:space="preserve">
+    <value>保存先のパスが正しくありません。</value>
+  </data>
+  <data name="ClipboardBusy" xml:space="preserve">
+    <value>クリップボードが他のアプリで使用中のため、コピーできませんでした。少し待ってからもう一度お試しください。</value>
+  </data>
+  <data name="AutoStartNoPath" xml:space="preserve">
+    <value>実行ファイルの場所を取得できませんでした。</value>
+  </data>
+</root>

@@ -1,0 +1,106 @@
+<Window x:Class="AreaShot.Editor.EditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:AreaShot.Core.Localization;assembly=AreaShot.Core"
+        xmlns:v="clr-namespace:AreaShot.Views"
+        Title="{x:Static l:Strings.EditorTitle}"
+        Width="1000" Height="700" MinWidth="640" MinHeight="400"
+        UseLayoutRounding="True"
+        FontFamily="{x:Static v:UiFont.Family}" FontSize="13"
+        Background="#F3F3F3">
+    <Window.Resources>
+        <Style x:Key="ToolButton" TargetType="RadioButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
+            <Setter Property="GroupName" Value="Tools" />
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="Margin" Value="0,0,2,0" />
+            <Setter Property="MinWidth" Value="56" />
+        </Style>
+        <Style x:Key="BarButton" TargetType="Button">
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="Margin" Value="0,0,2,0" />
+        </Style>
+        <Style x:Key="BarLabel" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="8,0,4,0" />
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Height" Value="28" />
+        </Style>
+        <Style x:Key="Divider" TargetType="Border">
+            <Setter Property="Width" Value="1" />
+            <Setter Property="Background" Value="#CCC" />
+            <Setter Property="Margin" Value="8,2" />
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- 上部: ツール・スタイル・操作・表示倍率 -->
+        <Border DockPanel.Dock="Top" Background="#FAFAFA" BorderBrush="#DDD" BorderThickness="0,0,0,1" Padding="8,6">
+            <WrapPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <RadioButton x:Name="SelectTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolSelect}" ToolTip="{x:Static l:Strings.ToolSelectTip}" Checked="OnToolChecked" />
+                    <RadioButton x:Name="LineTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolLine}" Checked="OnToolChecked" />
+                    <RadioButton x:Name="RectangleTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolRectangle}" Checked="OnToolChecked" />
+                    <RadioButton x:Name="ArrowTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolArrow}" Checked="OnToolChecked" />
+                    <RadioButton x:Name="TextTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolText}" ToolTip="{x:Static l:Strings.ToolTextTip}" Checked="OnToolChecked" />
+                    <RadioButton x:Name="MosaicTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolMosaic}" Checked="OnToolChecked" />
+                </StackPanel>
+                <Border Style="{StaticResource Divider}" />
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <TextBlock x:Name="ColorLabel" Text="{x:Static l:Strings.EditorColor}" Style="{StaticResource BarLabel}" />
+                    <ComboBox x:Name="ColorBox" Width="86" SelectionChanged="OnColorChanged">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="14" Height="14" BorderBrush="#888" BorderThickness="1" Background="{Binding Brush}" Margin="0,0,6,0" />
+                                    <TextBlock Text="{Binding Name}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock x:Name="WidthLabel" Text="{x:Static l:Strings.EditorWidth}" Style="{StaticResource BarLabel}" />
+                    <ComboBox x:Name="WidthBox" Width="64" SelectionChanged="OnWidthChanged" />
+                    <TextBlock x:Name="FontLabel" Text="{x:Static l:Strings.EditorFont}" Style="{StaticResource BarLabel}" />
+                    <ComboBox x:Name="FontBox" Width="130" SelectionChanged="OnFontChanged" />
+                    <TextBlock x:Name="FontSizeLabel" Text="{x:Static l:Strings.EditorFontSize}" Style="{StaticResource BarLabel}" />
+                    <ComboBox x:Name="FontSizeBox" Width="60" SelectionChanged="OnFontSizeChanged" />
+                </StackPanel>
+                <Border Style="{StaticResource Divider}" />
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Button x:Name="UndoButton" Style="{StaticResource BarButton}" Content="{x:Static l:Strings.EditorUndo}" ToolTip="{x:Static l:Strings.EditorUndoTip}" Click="OnUndo" />
+                    <Button x:Name="RedoButton" Style="{StaticResource BarButton}" Content="{x:Static l:Strings.EditorRedo}" ToolTip="{x:Static l:Strings.EditorRedoTip}" Click="OnRedo" />
+                    <Button x:Name="DeleteButton" Style="{StaticResource BarButton}" Content="{x:Static l:Strings.EditorDelete}" ToolTip="{x:Static l:Strings.EditorDeleteTip}" Click="OnDelete" />
+                    <Button x:Name="ClearButton" Style="{StaticResource BarButton}" Content="{x:Static l:Strings.EditorClearAll}" ToolTip="{x:Static l:Strings.EditorClearAllTip}" Click="OnClearAll" />
+                </StackPanel>
+                <Border Style="{StaticResource Divider}" />
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <TextBlock Text="{x:Static l:Strings.EditorZoom}" Style="{StaticResource BarLabel}" />
+                    <ComboBox x:Name="ZoomBox" Width="150" SelectionChanged="OnZoomSelected" ToolTip="{x:Static l:Strings.EditorZoomTip}" />
+                </StackPanel>
+            </WrapPanel>
+        </Border>
+
+        <!-- 下部: 出力 -->
+        <Border DockPanel.Dock="Bottom" Background="#FAFAFA" BorderBrush="#DDD" BorderThickness="0,1,0,0" Padding="10,8">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="{x:Static l:Strings.EditorCopy}" Padding="14,5" Margin="0,0,6,0" Click="OnCopy" />
+                    <Button x:Name="SaveButton" Content="{x:Static l:Strings.EditorSave}" Padding="14,5" Margin="0,0,6,0" Click="OnSave" />
+                    <Button Content="{x:Static l:Strings.EditorSaveAs}" Padding="14,5" Margin="0,0,6,0" Click="OnSaveAs" />
+                    <Button Content="{x:Static l:Strings.EditorClose}" Padding="14,5" Click="OnCloseClick" />
+                </StackPanel>
+                <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="#555" />
+            </DockPanel>
+        </Border>
+
+        <!-- 中央: 編集キャンバス -->
+        <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                      Background="#707070" Focusable="False"
+                      PreviewMouseWheel="OnPreviewMouseWheel" SizeChanged="OnScrollerSizeChanged">
+            <Grid x:Name="CanvasHost" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16">
+                <Canvas x:Name="TextLayer" Panel.ZIndex="1" />
+            </Grid>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

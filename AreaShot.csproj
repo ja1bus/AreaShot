@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- タスクトレイの NotifyIcon だけに使う（.NET の WindowsDesktop 共有フレームワークに含まれ、NuGet 依存ではない）。 -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>AreaShot</RootNamespace>
+    <AssemblyName>AreaShot</AssemblyName>
+    <Version>1.1.1</Version>
+    <ApplicationIcon>Resources/icon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- WFAC010: WinForms 向けの「DPI 設定は manifest でなく API で」という助言。WPF は manifest の PerMonitorV2 を使うため抑止する。 -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
+
+    <!-- 配布は Framework-dependent。対象 PC の .NET 8 Desktop Runtime を使い、.NET は内包しない。 -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+    <!-- 起動・初回キャプチャーの JIT 待ちを減らす（常駐アプリで最初の操作を軽くするため）。 -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <!-- 表示言語は英語（既定）と日本語だけ。日本語の文字列は ja\AreaShot.Core.resources.dll（V1.1.0）。 -->
+    <SatelliteResourceLanguages>en;ja</SatelliteResourceLanguages>
+
+    <!-- Core / Imaging / Tests は別 csproj。既定の Compile 対象から除外する。 -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Core/**;Imaging/**;Tests/**;tools/**</DefaultItemExcludes>
+  </PropertyGroup>
+  <!--
+    Microsoft Store 用の MSIX（V1.1.1〜。仕様書 §19.2）。installer/msix/build-msix.ps1 が -p:AreaShotMsix=true で publish する。
+    - 自動起動に StartupTask（WinRT）を使うため、TargetFramework に Windows の版を付けて定数 MSIX を定義する。
+    - Store から入れた PC に .NET 8 Desktop Runtime があるとは限らないため、MSIX の中身だけは .NET を内包する（Self-contained・複数ファイル）。
+      直接配布（フォルダ一式・Inno Setup）は従来どおり Framework-dependent で、この設定の影響を受けない。
+  -->
+  <PropertyGroup Condition="'$(AreaShotMsix)' == 'true'">
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <DefineConstants>$(DefineConstants);MSIX</DefineConstants>
+    <SelfContained>true</SelfContained>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(AreaShotMsix)' == 'true'">
+    <!-- Windows API の型の定義（StartupTask だけに使う）。ReadyToRun にすると 25MB → 54MB になるため除外する。 -->
+    <PublishReadyToRunExclude Include="Microsoft.Windows.SDK.NET.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- WPF と WinForms の同名型（Application・MessageBox など）の衝突を避けるため、WinForms 側の暗黙 using を外す。 -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Core/AreaShot.Core.csproj" />
+    <ProjectReference Include="Imaging/AreaShot.Imaging.csproj" />
+  </ItemGroup>
+</Project>

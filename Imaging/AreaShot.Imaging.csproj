@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    編集オブジェクトの描画・画像合成・エンコード（WPF の描画 API を使う）。
+    画面表示（EditorCanvas）と出力（ImageCompositor）で同じ描画コードを使い、見た目と保存結果を一致させる。
+    本体から分けているのは、合成結果の画素をテスト（Tests）から検証するため。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>AreaShot.Imaging</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Core/AreaShot.Core.csproj" />
+  </ItemGroup>
+</Project>

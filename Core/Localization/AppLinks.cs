@@ -10,6 +10,8 @@ public static class AppLinks
 {
     public const string ManualJapanese = "https://www.iwanaga.net/areashot/manual/";
     public const string ManualEnglish = "https://www.iwanaga.net/areashot/en/manual/";
+    /// <summary>ソースを MIT License で公開している公開リポジトリ（V1.2.0。設定画面の「ソースコード」）。</summary>
+    public const string Repository = "https://github.com/ja1bus/AreaShot";
 
     /// <summary>表示言語（実際に使っている言語）に合わせた取扱説明書の URL。日本語以外は英語。</summary>
     public static string Manual(CultureInfo uiCulture) =>

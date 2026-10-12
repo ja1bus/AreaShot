@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using AreaShot.Core.Naming;
+using AreaShot.Core.Output;
 using AreaShot.Core.Settings;
 using AreaShot.Imaging;
 using Microsoft.Win32;
@@ -59,22 +60,12 @@ public sealed class ImageOutputService
         {
             Directory.CreateDirectory(folder); // 保存先が無ければ作る
             var baseName = FileNameTemplate.Format(s.FileNameTemplate, DateTime.Now);
-            // 名前の決定と作成の間に同名ファイルが作られた場合に備え、CreateNew で作り、重なったら取り直す。
-            for (var attempt = 0; ; attempt++)
-            {
-                var path = UniqueFileName.Resolve(folder, baseName, extension, File.Exists);
-                try
-                {
-                    using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-                        encodedImage.WriteTo(stream);
-                    _notifySaved(path);
-                    return path;
-                }
-                catch (IOException) when (File.Exists(path) && attempt < 5)
-                {
-                    // 同名ファイルが直前に作られた。次の連番で作り直す。
-                }
-            }
+            // 一時ファイルに書き終えてから、上書きせずに移す。移す前に同名ファイルが作られた場合だけ次の連番を取り直す（書き込みの失敗は競合として扱わない）。
+            var path = SafeFileWriter.WriteNew(folder,
+                () => UniqueFileName.Resolve(folder, baseName, extension, File.Exists),
+                encodedImage.WriteTo);
+            _notifySaved(path);
+            return path;
         }
         catch (Exception ex) when (IsFileError(ex))
         {
@@ -108,27 +99,31 @@ public sealed class ImageOutputService
         var initial = _lastSaveAsDirectory ?? s.ResolveSaveFolder();
         if (Directory.Exists(initial)) dialog.InitialDirectory = initial;
 
-        if (dialog.ShowDialog(owner) != true) return null;
-
-        var path = dialog.FileName;
-        var ext = Path.GetExtension(path).ToLowerInvariant();
-        if (ext is not (".png" or ".jpg" or ".jpeg" or ".jpe"))
+        while (true)
         {
+            if (dialog.ShowDialog(owner) != true) return null;
+
             // 未対応の拡張子が入力された場合は、選んだ種類の拡張子を付け足す。
-            path += dialog.FilterIndex == 2 ? ".jpg" : ".png";
+            var path = SaveAsPath.Complete(dialog.FileName, jpegSelected: dialog.FilterIndex == 2);
+            // 付け足したパスはダイアログが上書きを確認していないため、ここで確認する（V1.2.0）。断ったらダイアログに戻る。
+            if (path != dialog.FileName && File.Exists(path) && !ConfirmOverwrite(owner, path))
+            {
+                dialog.InitialDirectory = Path.GetDirectoryName(path);
+                dialog.FileName = Path.GetFileName(path);
+                continue;
+            }
+            return new SaveAsTarget(path, ImageEncoder.FormatFromExtension(path), s.JpegQuality);
         }
-        return new SaveAsTarget(path, ImageEncoder.FormatFromExtension(path), s.JpegQuality);
     }
 
-    /// <summary>確定済みの保存先へ画像を書き込む。</summary>
+    /// <summary>確定済みの保存先へ画像を書き込む。一時ファイルに書き終えてから置き換えるため、失敗しても既存のファイルは残る。</summary>
     public string? SaveAsToTarget(BitmapSource image, SaveAsTarget target, Window? owner)
     {
         var path = target.Path;
         try
         {
             using var encoded = Encode(image, target.Format, target.JpegQuality);
-            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
-                encoded.WriteTo(stream);
+            SafeFileWriter.WriteReplacing(path, encoded.WriteTo);
             _lastSaveAsDirectory = Path.GetDirectoryName(path);
             _notifySaved(path);
             return path;
@@ -171,6 +166,15 @@ public sealed class ImageOutputService
         IOException io => io.Message,
         _ => ex.Message,
     };
+
+    private static bool ConfirmOverwrite(Window? owner, string path)
+    {
+        var message = string.Format(Strings.SaveAsOverwriteConfirmFormat, path, Path.GetExtension(path));
+        var result = owner is not null && owner.IsVisible
+            ? MessageBox.Show(owner, message, Strings.SaveAsTitle, MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No)
+            : MessageBox.Show(message, Strings.SaveAsTitle, MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+        return result == MessageBoxResult.Yes;
+    }
 
     private static void ShowError(Window? owner, string message)
     {

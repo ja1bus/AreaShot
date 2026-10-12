@@ -404,6 +404,36 @@ The extension is added from the image format. _2, _3, … is appended only when 
 Open this address in your browser:
 {1}</value>
   </data>
+  <data name="SettingsLicenseLink" xml:space="preserve">
+    <value>MIT License</value>
+  </data>
+  <data name="SettingsLicenseToolTip" xml:space="preserve">
+    <value>AreaShot is open-source software released under the MIT License. Click to show the full license text.</value>
+  </data>
+  <data name="SettingsSourceLink" xml:space="preserve">
+    <value>Source code</value>
+  </data>
+  <data name="SettingsNoticesLink" xml:space="preserve">
+    <value>Third-party notices</value>
+  </data>
+  <data name="SettingsNoticesToolTip" xml:space="preserve">
+    <value>Opens the notices for third-party software (such as .NET) in Notepad.</value>
+  </data>
+  <data name="SettingsLicenseUnreadableFormat" xml:space="preserve">
+    <value>Could not read the license file. Check the following file.
+{0}</value>
+  </data>
+  <data name="SettingsNoticesOpenFailedFormat" xml:space="preserve">
+    <value>Could not open the third-party notices. Check the following file.
+{0}</value>
+  </data>
+  <data name="SettingsSourceOpenFailedFormat" xml:space="preserve">
+    <value>Could not open the source code page in your browser.
+{0}
+
+Open this address in your browser:
+{1}</value>
+  </data>
   <data name="AutoStartDisabledByUser" xml:space="preserve">
     <value>it is turned off in Startup apps (Settings or Task Manager). Turn on AreaShot there.</value>
   </data>
@@ -477,6 +507,12 @@ Check the save folder in Settings, or use “Save as”.</value>
   </data>
   <data name="SaveAsTitle" xml:space="preserve">
     <value>Save as</value>
+  </data>
+  <data name="SaveAsOverwriteConfirmFormat" xml:space="preserve">
+    <value>The extension "{1}" was added because the entered extension is not supported, and the following file already exists.
+{0}
+
+Do you want to replace it?</value>
   </data>
   <data name="SaveAsFilter" xml:space="preserve">
     <value>PNG image (*.png)|*.png|JPEG image (*.jpg;*.jpeg)|*.jpg;*.jpeg</value>

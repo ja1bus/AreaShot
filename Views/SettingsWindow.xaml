@@ -149,8 +149,24 @@
                         <Run Text="{x:Static l:Strings.SettingsManualLink}" />
                     </Hyperlink>
                 </TextBlock>
-                <TextBlock x:Name="VersionText" Style="{StaticResource Note}" />
-                <TextBlock Text="© ja1bus" Style="{StaticResource Note}" />
+                <TextBlock Style="{StaticResource Note}">
+                    <Run x:Name="VersionRun" />
+                    <Run Text="  © ja1bus" />
+                </TextBlock>
+                <!-- ライセンス表記（V1.2.0。仕様書 §14.6）。全文は同梱の LICENSE をこの画面から表示し、Web だけに頼らない。 -->
+                <TextBlock Style="{StaticResource Note}">
+                    <Hyperlink Click="OnShowLicense" ToolTip="{x:Static l:Strings.SettingsLicenseToolTip}">
+                        <Run Text="{x:Static l:Strings.SettingsLicenseLink}" />
+                    </Hyperlink>
+                    <Run Text=" · " />
+                    <Hyperlink x:Name="SourceLink" Click="OnOpenSource">
+                        <Run Text="{x:Static l:Strings.SettingsSourceLink}" />
+                    </Hyperlink>
+                    <Run Text=" · " />
+                    <Hyperlink Click="OnOpenNotices" ToolTip="{x:Static l:Strings.SettingsNoticesToolTip}">
+                        <Run Text="{x:Static l:Strings.SettingsNoticesLink}" />
+                    </Hyperlink>
+                </TextBlock>
             </StackPanel>
         </DockPanel>
     </StackPanel>

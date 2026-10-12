@@ -45,6 +45,31 @@ public class FileNameTemplateTests
         Assert.Equal("CON_", FileNameTemplate.Format("CON", Sample));
     }
 
+    [Theory]
+    [InlineData("CON.capture", "CON_.capture")]
+    [InlineData("nul.x", "nul_.x")]
+    [InlineData("COM1.capture", "COM1_.capture")]
+    [InlineData("lpt9.a.b", "lpt9_.a.b")]
+    [InlineData("COM0.capture", "COM0_.capture")]
+    [InlineData("COM¹.capture", "COM¹_.capture")]
+    [InlineData("CON .capture", "CON_ .capture")]
+    [InlineData("AUX.", "AUX_")]
+    public void Reserved_device_name_before_the_first_period_gets_suffix(string template, string expected)
+    {
+        Assert.Equal(expected, FileNameTemplate.Format(template, Sample));
+    }
+
+    [Theory]
+    [InlineData("CONSOLE")]
+    [InlineData("CONSOLE.capture")]
+    [InlineData("capture.CON")]
+    [InlineData("COM10.capture")]
+    [InlineData("_CON.capture")]
+    public void Names_that_only_contain_a_reserved_name_are_kept(string template)
+    {
+        Assert.Equal(template, FileNameTemplate.Format(template, Sample));
+    }
+
     [Fact]
     public void Validate_accepts_default_and_plain_text()
     {

@@ -9,7 +9,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>AreaShot</RootNamespace>
     <AssemblyName>AreaShot</AssemblyName>
-    <Version>1.1.1</Version>
+    <Version>1.2.0</Version>
     <ApplicationIcon>Resources/icon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- WFAC010: WinForms 向けの「DPI 設定は manifest でなく API で」という助言。WPF は manifest の PerMonitorV2 を使うため抑止する。 -->
@@ -47,6 +47,18 @@
     <!-- WPF と WinForms の同名型（Application・MessageBox など）の衝突を避けるため、WinForms 側の暗黙 using を外す。 -->
     <Using Remove="System.Windows.Forms" />
     <Using Remove="System.Drawing" />
+  </ItemGroup>
+  <!--
+    ライセンス表記（V1.2.0。仕様書 §14.6・§19）。MIT License の全文と第三者のソフトウェアの表記を、配布物（フォルダ一式・Inno Setup のインストール先・MSIX）の
+    exe と同じフォルダーへ入れる。scripts では public-repo/ にある原本、公開リポジトリではルートにある同名のファイルを使う（公開リポジトリのビルドが public-repo/ に依存しないように）。
+  -->
+  <ItemGroup Condition="Exists('public-repo/LICENSE')">
+    <None Update="public-repo/LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Update="public-repo/THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup Condition="!Exists('public-repo/LICENSE') And Exists('LICENSE')">
+    <None Update="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Update="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Core/AreaShot.Core.csproj" />

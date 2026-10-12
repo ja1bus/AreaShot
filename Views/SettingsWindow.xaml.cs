@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using AreaShot.Core.Input;
+using AreaShot.Core.Licensing;
 using AreaShot.Core.Naming;
 using AreaShot.Core.Settings;
 using AreaShot.Services;
@@ -70,8 +71,9 @@ public partial class SettingsWindow : Window
         LanguageCombo.ItemsSource = UiLanguage.All.Select(v => new LanguageChoice(v)).ToList();
         LanguageCombo.SelectedIndex = Math.Max(0, UiLanguage.All.ToList().IndexOf(UiLanguage.Normalize(_draft.Language)));
         // csproj の <Version>（例: 1.0.2）。どの版が動いているかを利用者が確認できるようにする。
-        VersionText.Text = string.Format(Strings.SettingsVersionFormat, typeof(SettingsWindow).Assembly.GetName().Version?.ToString(3));
+        VersionRun.Text =string.Format(Strings.SettingsVersionFormat, typeof(SettingsWindow).Assembly.GetName().Version?.ToString(3));
         ManualLink.ToolTip = AppLinks.Manual(System.Globalization.CultureInfo.CurrentUICulture);
+        SourceLink.ToolTip = AppLinks.Repository;
 
         HotkeyBox.CaptureStarted += (_, _) => Suspend();
         HotkeyBox.CaptureEnded += (_, _) => Resume();
@@ -265,6 +267,63 @@ public partial class SettingsWindow : Window
             MessageBox.Show(this, string.Format(Strings.SettingsManualOpenFailedFormat, ex.Message, url),
                 "AreaShot", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+    }
+
+    /// <summary>同梱の LICENSE（MIT License の全文）をこの画面で表示する（V1.2.0）。読めなければフルパスを示す。</summary>
+    private void OnShowLicense(object sender, RoutedEventArgs e)
+    {
+        var text = LicenseFiles.Read(LicenseFiles.LicenseName, out var problem);
+        if (text is null)
+        {
+            ErrorLog.Write($"Failed to read the license file: {problem}");
+            MessageBox.Show(this, string.Format(Strings.SettingsLicenseUnreadableFormat, problem),
+                "AreaShot", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        MessageBox.Show(this, text, Strings.SettingsLicenseLink, MessageBoxButton.OK, MessageBoxImage.None);
+    }
+
+    /// <summary>公開リポジトリ（ソースコード）を既定のブラウザーで開く（V1.2.0）。開けなければ URL を見せる。</summary>
+    private void OnOpenSource(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(AppLinks.Repository) { UseShellExecute = true })?.Dispose();
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            ErrorLog.Write("Failed to open the source code page", ex);
+            MessageBox.Show(this, string.Format(Strings.SettingsSourceOpenFailedFormat, ex.Message, AppLinks.Repository),
+                "AreaShot", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    /// <summary>
+    /// 同梱の THIRD-PARTY-NOTICES.md をメモ帳で開く（V1.2.0。.md は関連付けが無いことがあるため）。
+    /// 開けなければフルパスを示す（暗号化などで読めない場合に利用者が確かめられるように）。
+    /// </summary>
+    private void OnOpenNotices(object sender, RoutedEventArgs e)
+    {
+        var path = LicenseFiles.PathOf(LicenseFiles.NoticesName);
+        string? problem = null;
+        if (!File.Exists(path)) problem = path;
+        else
+        {
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo("notepad.exe") { UseShellExecute = false };
+                psi.ArgumentList.Add(path);
+                System.Diagnostics.Process.Start(psi)?.Dispose();
+            }
+            catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+            {
+                problem = $"{path}{Environment.NewLine}{ex.Message}";
+            }
+        }
+        if (problem is null) return;
+        ErrorLog.Write($"Failed to open the third-party notices: {problem}");
+        MessageBox.Show(this, string.Format(Strings.SettingsNoticesOpenFailedFormat, problem),
+            "AreaShot", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
     private void OnSave(object sender, RoutedEventArgs e)

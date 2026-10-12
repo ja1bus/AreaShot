@@ -29,11 +29,12 @@ public static partial class FileNameTemplate
         new("{ss}", nameof(Strings.TokenSecond), "ss"),
     ];
 
+    /// <summary>Windows の予約デバイス名。拡張子が付いても（"CON.capture" など）予約名として扱われる。</summary>
     private static readonly HashSet<string> ReservedNames = new(StringComparer.OrdinalIgnoreCase)
     {
         "CON", "PRN", "AUX", "NUL",
-        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+        "COM0", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "COM¹", "COM²", "COM³",
+        "LPT0", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9", "LPT¹", "LPT²", "LPT³",
     };
 
     [GeneratedRegex(@"\{[^{}]*\}")]
@@ -72,14 +73,19 @@ public static partial class FileNameTemplate
         return name.Length == 0 ? (template == Default ? "capture" : Format(Default, time)) : name;
     }
 
-    /// <summary>ファイル名に使えない文字を "_" にし、末尾の空白・ピリオドを除く。予約名は "_" を付ける。</summary>
+    /// <summary>
+    /// ファイル名に使えない文字を "_" にし、末尾の空白・ピリオドを除く。
+    /// 最初のピリオドより前（その直前の空白は除く）が予約名なら、その後ろに "_" を付ける（"CON.capture" → "CON_.capture"。V1.2.0）。
+    /// </summary>
     public static string Sanitize(string name)
     {
         var invalid = Path.GetInvalidFileNameChars();
         var sb = new StringBuilder(name.Length);
         foreach (var c in name) sb.Append(invalid.Contains(c) ? '_' : c);
         var result = sb.ToString().Trim().TrimEnd('.', ' ');
-        if (ReservedNames.Contains(result)) result += "_";
+        var dot = result.IndexOf('.');
+        var stem = (dot < 0 ? result : result[..dot]).TrimEnd(' ');
+        if (ReservedNames.Contains(stem)) result = result.Insert(stem.Length, "_");
         return result;
     }
 

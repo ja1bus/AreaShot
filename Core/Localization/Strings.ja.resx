@@ -404,6 +404,36 @@
 次のアドレスをブラウザーで開いてください:
 {1}</value>
   </data>
+  <data name="SettingsLicenseLink" xml:space="preserve">
+    <value>MIT License</value>
+  </data>
+  <data name="SettingsLicenseToolTip" xml:space="preserve">
+    <value>AreaShot は MIT License で公開しているオープンソースソフトウェアです。押すとライセンスの全文を表示します。</value>
+  </data>
+  <data name="SettingsSourceLink" xml:space="preserve">
+    <value>ソースコード</value>
+  </data>
+  <data name="SettingsNoticesLink" xml:space="preserve">
+    <value>第三者のソフトウェア</value>
+  </data>
+  <data name="SettingsNoticesToolTip" xml:space="preserve">
+    <value>第三者のソフトウェア（.NET など）の表記をメモ帳で開きます。</value>
+  </data>
+  <data name="SettingsLicenseUnreadableFormat" xml:space="preserve">
+    <value>ライセンスのファイルを読み込めませんでした。次のファイルを確認してください。
+{0}</value>
+  </data>
+  <data name="SettingsNoticesOpenFailedFormat" xml:space="preserve">
+    <value>第三者のソフトウェアの表記を開けませんでした。次のファイルを確認してください。
+{0}</value>
+  </data>
+  <data name="SettingsSourceOpenFailedFormat" xml:space="preserve">
+    <value>ソースコードのページをブラウザーで開けませんでした。
+{0}
+
+次のアドレスをブラウザーで開いてください:
+{1}</value>
+  </data>
   <data name="AutoStartDisabledByUser" xml:space="preserve">
     <value>［スタートアップ アプリ］（設定またはタスク マネージャー）で無効になっています。そこで AreaShot を有効にしてください。</value>
   </data>
@@ -477,6 +507,12 @@
   </data>
   <data name="SaveAsTitle" xml:space="preserve">
     <value>名前を付けて保存</value>
+  </data>
+  <data name="SaveAsOverwriteConfirmFormat" xml:space="preserve">
+    <value>入力された拡張子は使えないため「{1}」を付けました。次のファイルは既にあります。
+{0}
+
+上書きしますか?</value>
   </data>
   <data name="SaveAsFilter" xml:space="preserve">
     <value>PNG 画像 (*.png)|*.png|JPEG 画像 (*.jpg;*.jpeg)|*.jpg;*.jpeg</value>

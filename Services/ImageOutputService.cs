@@ -14,14 +14,22 @@ namespace AreaShot.Services;
 public sealed record SaveAsTarget(string Path, ImageFormatKind Format, int JpegQuality);
 
 /// <summary>
+/// 「保存先に保存」の保存対象（V1.3.0）。保存操作の時点の設定から決め、説明入力画面を開いた後に設定が変わっても変えない。
+/// </summary>
+public sealed record SavePlan(FileNamingMode Mode, string Folder, string Template, ImageFormatKind Format, int JpegQuality)
+{
+    public string Extension => AppSettings.ExtensionOf(Format);
+}
+
+/// <summary>
 /// 画像の出力（クリップボード・保存先に保存・名前を付けて保存）。キャプチャー後ダイアログとエディタの両方から使う（仕様書 §12）。
 /// 失敗した場合はメッセージを表示して false / null を返す。呼び出し側は画面を閉じずに残す（画像を失わないため）。
+/// 作業用フォルダの記憶は AppHost が持つ（「名前を付けて保存」の成功後に AppHost が更新する）。
 /// </summary>
 public sealed class ImageOutputService
 {
     private readonly Func<AppSettings> _settings;
     private readonly Action<string> _notifySaved;
-    private string? _lastSaveAsDirectory;
 
     public ImageOutputService(Func<AppSettings> settings, Action<string> notifySaved)
     {
@@ -37,16 +45,43 @@ public sealed class ImageOutputService
         return false;
     }
 
-    /// <summary>設定の保存先・ファイル名・形式で保存する。保存したパスを返す。</summary>
-    public string? SaveToDefault(BitmapSource image, Window? owner)
+    /// <summary>今の設定から「保存先に保存」の保存対象を決める。</summary>
+    public SavePlan PlanSave()
     {
         var s = _settings();
-        var folder = s.ResolveSaveFolder();
-        var extension = AppSettings.ExtensionOf(s.ImageFormat);
+        return new SavePlan(s.NamingMode, s.ResolveTargetFolder(), s.FileNameTemplate, s.ImageFormat, s.JpegQuality);
+    }
+
+    /// <summary>
+    /// 連番の次の名前の見込み（説明入力画面の表示用）。フォルダを読めない場合は <see cref="SequentialName.Error"/> に理由を入れる。
+    /// </summary>
+    public static SequentialName PreviewSequential(SavePlan plan, string? description)
+    {
+        try
+        {
+            return SequentialFileName.Preview(plan.Folder, description, plan.Extension);
+        }
+        catch (Exception ex) when (IsFileError(ex))
+        {
+            ErrorLog.Write($"Numbering failed: {plan.Folder}", ex);
+            return new SequentialName(0, "", string.Format(Strings.SequentialNumberingFailedFormat, Describe(ex), plan.Folder));
+        }
+    }
+
+    /// <summary>今の設定の保存先・名前の付け方・形式で保存する（説明は付けない）。保存したパスを返す。</summary>
+    public string? SaveToDefault(BitmapSource image, Window? owner) => Save(image, PlanSave(), null, owner);
+
+    /// <summary>
+    /// <paramref name="plan"/> の保存先・名前の付け方で保存する。保存したパスを返す。
+    /// 連番は書き込みの直前に採番し、移す間に同名ファイルができた場合は次の番号で移し直す（上書きしない）。
+    /// </summary>
+    public string? Save(BitmapSource image, SavePlan plan, string? description, Window? owner)
+    {
+        var folder = plan.Folder;
         MemoryStream encoded;
         try
         {
-            encoded = Encode(image, s.ImageFormat, s.JpegQuality);
+            encoded = Encode(image, plan.Format, plan.JpegQuality);
         }
         catch (Exception ex) when (IsEncodeError(ex))
         {
@@ -58,14 +93,28 @@ public sealed class ImageOutputService
         using var encodedImage = encoded;
         try
         {
+            Func<string> choosePath;
+            if (plan.Mode == FileNamingMode.DateTemplate)
+            {
+                var baseName = FileNameTemplate.Format(plan.Template, DateTime.Now);
+                choosePath = () => UniqueFileName.Resolve(folder, baseName, plan.Extension, File.Exists);
+            }
+            else
+            {
+                // 採番できない・長すぎる場合は書く前に止める（一時ファイルも作らない）。
+                ChooseSequentialPath(folder, description, plan.Extension);
+                choosePath = () => ChooseSequentialPath(folder, description, plan.Extension);
+            }
             Directory.CreateDirectory(folder); // 保存先が無ければ作る
-            var baseName = FileNameTemplate.Format(s.FileNameTemplate, DateTime.Now);
-            // 一時ファイルに書き終えてから、上書きせずに移す。移す前に同名ファイルが作られた場合だけ次の連番を取り直す（書き込みの失敗は競合として扱わない）。
-            var path = SafeFileWriter.WriteNew(folder,
-                () => UniqueFileName.Resolve(folder, baseName, extension, File.Exists),
-                encodedImage.WriteTo);
+            // 一時ファイルに書き終えてから、上書きせずに移す。移す前に同名ファイルが作られた場合だけ次の名前を取り直す（書き込みの失敗は競合として扱わない）。
+            var path = SafeFileWriter.WriteNew(folder, choosePath, encodedImage.WriteTo);
             _notifySaved(path);
             return path;
+        }
+        catch (SequentialNameException ex)
+        {
+            ShowError(owner, ex.Message);
+            return null;
         }
         catch (Exception ex) when (IsFileError(ex))
         {
@@ -75,6 +124,26 @@ public sealed class ImageOutputService
         }
     }
 
+    /// <summary>次の連番のパス。フォルダを読めない・名前が長すぎる場合は <see cref="SequentialNameException"/>。</summary>
+    private static string ChooseSequentialPath(string folder, string? description, string extension)
+    {
+        SequentialName name;
+        try
+        {
+            name = SequentialFileName.Preview(folder, description, extension);
+        }
+        catch (Exception ex) when (IsFileError(ex))
+        {
+            ErrorLog.Write($"Numbering failed: {folder}", ex);
+            throw new SequentialNameException(string.Format(Strings.SequentialNumberingFailedFormat, Describe(ex), folder));
+        }
+        if (name.Error is not null) throw new SequentialNameException(name.Error);
+        return Path.Combine(folder, name.FileName);
+    }
+
+    /// <summary>採番の失敗（メッセージは表示用）。</summary>
+    private sealed class SequentialNameException(string message) : Exception(message);
+
     /// <summary>Windows 標準の保存ダイアログで保存する。キャンセルまたは失敗時は null。</summary>
     public string? SaveAs(BitmapSource image, Window? owner)
     {
@@ -82,10 +151,16 @@ public sealed class ImageOutputService
         return target is null ? null : SaveAsToTarget(image, target, owner);
     }
 
-    /// <summary>保存先だけを先に選ぶ。エディタは確定後に画像を合成できる。</summary>
+    /// <summary>
+    /// 保存先だけを先に選ぶ。エディタは確定後に画像を合成できる。
+    /// 初期フォルダは作業用フォルダ（無ければ保存フォルダ）、初期名は選んでいる名前の付け方で作る（V1.3.0）。
+    /// 連番の候補は初期フォルダで求め、ダイアログでフォルダを変えても振り直さない。説明の入力画面は出さない。
+    /// </summary>
     public SaveAsTarget? ChooseSaveAs(Window? owner)
     {
         var s = _settings();
+        var initial = s.ResolveWorkFolder();
+        if (!Directory.Exists(initial)) initial = s.ResolveSaveFolder();
         var dialog = new SaveFileDialog
         {
             Title = Strings.SaveAsTitle,
@@ -94,9 +169,8 @@ public sealed class ImageOutputService
             DefaultExt = AppSettings.ExtensionOf(s.ImageFormat),
             AddExtension = true,
             OverwritePrompt = true,
-            FileName = FileNameTemplate.Format(s.FileNameTemplate, DateTime.Now),
+            FileName = InitialSaveAsName(s, initial),
         };
-        var initial = _lastSaveAsDirectory ?? s.ResolveSaveFolder();
         if (Directory.Exists(initial)) dialog.InitialDirectory = initial;
 
         while (true)
@@ -116,6 +190,21 @@ public sealed class ImageOutputService
         }
     }
 
+    private static string InitialSaveAsName(AppSettings s, string folder)
+    {
+        if (s.NamingMode == FileNamingMode.DateTemplate) return FileNameTemplate.Format(s.FileNameTemplate, DateTime.Now);
+        try
+        {
+            return SequentialFileName.FormatNumber(SequentialFileName.NextNumberIn(folder));
+        }
+        catch (Exception ex) when (IsFileError(ex))
+        {
+            // 初期名は利用者が直せるため、採番できなくても保存ダイアログは開く。
+            ErrorLog.Write($"Numbering failed: {folder}", ex);
+            return SequentialFileName.FormatNumber(1);
+        }
+    }
+
     /// <summary>確定済みの保存先へ画像を書き込む。一時ファイルに書き終えてから置き換えるため、失敗しても既存のファイルは残る。</summary>
     public string? SaveAsToTarget(BitmapSource image, SaveAsTarget target, Window? owner)
     {
@@ -124,7 +213,6 @@ public sealed class ImageOutputService
         {
             using var encoded = Encode(image, target.Format, target.JpegQuality);
             SafeFileWriter.WriteReplacing(path, encoded.WriteTo);
-            _lastSaveAsDirectory = Path.GetDirectoryName(path);
             _notifySaved(path);
             return path;
         }

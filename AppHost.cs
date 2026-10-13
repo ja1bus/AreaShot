@@ -42,6 +42,7 @@ public sealed class AppHost : ISettingsHost, IDisposable
     private SettingsWindow? _settingsWindow;
     private DispatcherTimer? _delayedCapture;
     private bool _memoryCollectionQueued;
+    private bool _choosingWorkFolder;
     private bool _disposed;
 
     public AppHost(Application app, CultureInfo windowsUiCulture)
@@ -58,9 +59,34 @@ public sealed class AppHost : ISettingsHost, IDisposable
 
     public event EventHandler? HotkeyRegistrationChanged;
 
-    private string SaveTooltip =>
-        string.Format(Strings.SaveTooltipFormat, Path.Combine(_settings.ResolveSaveFolder(),
-            FileNameTemplate.Format(_settings.FileNameTemplate, DateTime.Now) + AppSettings.ExtensionOf(_settings.ImageFormat)));
+    /// <summary>作業用フォルダ（画面では「連番の保存先」）が変わった（設定画面の表示を更新するため。V1.3.0）。</summary>
+    public event EventHandler? WorkFolderChanged;
+
+    /// <summary>キャプチャー後ダイアログ・エディタに出す保存先（V1.3.0）。</summary>
+    private SaveDestination CurrentDestination()
+    {
+        var folder = _settings.ResolveTargetFolder();
+        return new SaveDestination(_settings.NamingMode, folder, Directory.Exists(folder), SaveTooltip());
+    }
+
+    /// <summary>「保存先に保存」のツールチップ。次に保存する名前の例と、ファイル名の付け方。</summary>
+    private string SaveTooltip()
+    {
+        var folder = _settings.ResolveTargetFolder();
+        var extension = AppSettings.ExtensionOf(_settings.ImageFormat);
+        string example;
+        if (_settings.NamingMode == FileNamingMode.DateTemplate)
+        {
+            example = Path.Combine(folder, FileNameTemplate.Format(_settings.FileNameTemplate, DateTime.Now) + extension);
+        }
+        else
+        {
+            var next = ImageOutputService.PreviewSequential(_output.PlanSave(), null);
+            example = next.Number > 0 ? Path.Combine(folder, next.FileName) : folder;
+        }
+        return string.Format(Strings.SaveTooltipFormat, example) + "\n" +
+               string.Format(Strings.SaveTooltipModeFormat, FileNamingModes.Describe(_settings.NamingMode));
+    }
 
     public void Start()
     {
@@ -187,8 +213,9 @@ public sealed class AppHost : ISettingsHost, IDisposable
         var done = action switch
         {
             QuickAction.Copy => _output.CopyToClipboard(image.Source, null),
-            QuickAction.Save => _output.SaveToDefault(image.Source, null) is not null,
-            QuickAction.SaveAs => _output.SaveAs(image.Source, null) is not null,
+            // 連番＋説明では説明の入力画面を出す。キャンセルしたらダイアログを出す（画像を失わない）。
+            QuickAction.Save => SaveToDestination(_ => image.Source, null),
+            QuickAction.SaveAs => SaveAs(image.Source, null),
             QuickAction.Edit => true,
             _ => false,
         };
@@ -219,8 +246,9 @@ public sealed class AppHost : ISettingsHost, IDisposable
     /// <summary>ダイアログを、コピーボタンがマウスを離した点（物理ピクセル）に来るように出す。</summary>
     private void ShowResultDialog(CapturedImage image, int releaseX, int releaseY)
     {
-        var dialog = new CaptureResultWindow(image, SaveTooltip);
+        var dialog = new CaptureResultWindow(image, CurrentDestination());
         dialog.ActionRequested += OnResultAction;
+        dialog.WorkFolderChangeRequested += ChangeWorkFolder;
         WindowPlacement.PlaceNear(dialog, dialog.PrimaryButton, releaseX, releaseY);
         dialog.Show();
     }
@@ -234,10 +262,10 @@ public sealed class AppHost : ISettingsHost, IDisposable
                 if (_output.CopyToClipboard(image.Source, dialog)) dialog.CloseAfterAction();
                 break;
             case CaptureAction.Save:
-                if (_output.SaveToDefault(image.Source, dialog) is not null) dialog.CloseAfterAction();
+                if (SaveToDestination(_ => image.Source, dialog)) dialog.CloseAfterAction();
                 break;
             case CaptureAction.SaveAs:
-                if (_output.SaveAs(image.Source, dialog) is not null) dialog.CloseAfterAction();
+                if (SaveAs(image.Source, dialog)) dialog.CloseAfterAction();
                 break;
             case CaptureAction.Edit:
                 dialog.CloseAfterAction();
@@ -259,10 +287,11 @@ public sealed class AppHost : ISettingsHost, IDisposable
     {
         var (cx, cy) = image.ScreenCenter;
         var monitor = DisplayInfo.MonitorAt(cx, cy);
-        var editor = new EditorWindow(image, _settings.Editor, SaveTooltip);
+        var editor = new EditorWindow(image, _settings.Editor, CurrentDestination());
         editor.SizeToImage(monitor.DpiScale);
         WindowPlacement.CenterOnMonitor(editor, cx, cy);
         editor.OutputRequested += OnEditorOutput;
+        editor.WorkFolderChangeRequested += ChangeWorkFolder;
         editor.Closed += (_, _) =>
         {
             _settings.Editor = editor.Defaults;
@@ -275,46 +304,164 @@ public sealed class AppHost : ISettingsHost, IDisposable
 
     private void OnEditorOutput(EditorWindow editor, CaptureAction action)
     {
-        SaveAsTarget? target = null;
-        if (action == CaptureAction.SaveAs)
-        {
-            try { editor.PrepareOutput(); }
-            catch (Exception ex) when (IsCompositionError(ex))
-            {
-                ReportCompositionError(editor, ex);
-                return;
-            }
-            target = _output.ChooseSaveAs(editor);
-            if (target is null) return;
-        }
-
-        BitmapSource composed;
-        try
-        {
-            composed = target is null ? editor.Compose() : editor.ComposePrepared();
-        }
+        // 文字の入力とドラッグを確定してから出力する。保存ダイアログ・説明の入力画面を開く前にも確定しておく。
+        try { editor.PrepareOutput(); }
         catch (Exception ex) when (IsCompositionError(ex))
         {
             ReportCompositionError(editor, ex);
             return;
         }
-        var ok = action switch
+
+        bool ok;
+        switch (action)
         {
-            CaptureAction.Copy => _output.CopyToClipboard(composed, editor),
-            CaptureAction.Save => _output.SaveToDefault(composed, editor) is not null,
-            CaptureAction.SaveAs => _output.SaveAsToTarget(composed, target!, editor) is not null,
-            _ => false,
-        };
+            case CaptureAction.Copy:
+                ok = ComposeOrReport(editor, editor) is { } copied && _output.CopyToClipboard(copied, editor);
+                break;
+            case CaptureAction.Save:
+                // 連番＋説明では、説明を確定してから合成する。
+                ok = SaveToDestination(owner => ComposeOrReport(editor, owner), editor);
+                break;
+            case CaptureAction.SaveAs:
+                var target = _output.ChooseSaveAs(editor);
+                if (target is null) return;
+                var path = ComposeOrReport(editor, editor) is { } composed ? _output.SaveAsToTarget(composed, target, editor) : null;
+                if (path is not null) RememberWorkFolder(path, editor);
+                ok = path is not null;
+                break;
+            default:
+                ok = false;
+                break;
+        }
         if (ok) editor.Close();
+    }
+
+    /// <summary>確定済みの編集内容を合成する。失敗したらメッセージを出して null。</summary>
+    private static BitmapSource? ComposeOrReport(EditorWindow editor, Window? owner)
+    {
+        try
+        {
+            return editor.ComposePrepared();
+        }
+        catch (Exception ex) when (IsCompositionError(ex))
+        {
+            ReportCompositionError(owner ?? editor, ex);
+            return null;
+        }
     }
 
     private static bool IsCompositionError(Exception ex) =>
         ex is InvalidOperationException or OutOfMemoryException or System.Runtime.InteropServices.COMException;
 
-    private static void ReportCompositionError(Window editor, Exception ex)
+    private static void ReportCompositionError(Window owner, Exception ex)
     {
         ErrorLog.Write("Image composition failed", ex);
-        MessageBox.Show(editor, Strings.ComposeFailed, "AreaShot", MessageBoxButton.OK, MessageBoxImage.Warning);
+        MessageBox.Show(owner, Strings.ComposeFailed, "AreaShot", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    // ---- 保存先に保存・名前を付けて保存・作業用フォルダ（V1.3.0） ----
+
+    /// <summary>
+    /// 「保存先に保存」（仕様書 §12.6）。保存対象は押した時点の設定で決める。連番＋説明では説明の入力画面を出す。
+    /// <paramref name="image"/> は保存の直前に呼ぶ（引数はエラー表示の親）。null を返したら中止（エラーは表示済み）。
+    /// 保存できたら true。失敗・キャンセルでは false（呼び出し側は画像を残す）。
+    /// </summary>
+    private bool SaveToDestination(Func<Window?, BitmapSource?> image, Window? owner)
+    {
+        var plan = _output.PlanSave();
+        if (plan.Mode != FileNamingMode.SequentialWithDescription)
+            return image(owner) is { } source && _output.Save(source, plan, null, owner) is not null;
+
+        BitmapSource? composed = null;
+        var dialog = new DescriptionDialog(plan, owner, (description, dialogWindow) =>
+        {
+            composed ??= image(dialogWindow);
+            return composed is not null && _output.Save(composed, plan, description, dialogWindow) is not null;
+        });
+        return dialog.ShowDialog() == true;
+    }
+
+    /// <summary>「名前を付けて保存」。保存できたら、保存したフォルダを作業用フォルダにする。</summary>
+    private bool SaveAs(BitmapSource image, Window? owner)
+    {
+        var path = _output.SaveAs(image, owner);
+        if (path is null) return false;
+        RememberWorkFolder(path, owner);
+        return true;
+    }
+
+    private void RememberWorkFolder(string savedPath, Window? owner)
+    {
+        var folder = Path.GetDirectoryName(savedPath);
+        if (!string.IsNullOrEmpty(folder)) SetWorkFolder(folder, owner, afterImageSaved: true);
+    }
+
+    /// <summary>作業用フォルダ（連番の保存先）を選ぶ（キャプチャー後ダイアログ・エディタの［フォルダ変更］）。キャンセルでは変えない。</summary>
+    public void ChangeWorkFolder(Window? owner)
+    {
+        if (_choosingWorkFolder) return;
+        _choosingWorkFolder = true;
+        try
+        {
+            var dialog = new OpenFolderDialog { Title = Strings.WorkFolderSelectTitle };
+            var current = _settings.ResolveWorkFolder();
+            if (Directory.Exists(current)) dialog.InitialDirectory = current;
+            var chosen = owner is not null && owner.IsVisible ? dialog.ShowDialog(owner) : dialog.ShowDialog();
+            if (chosen == true) SetWorkFolder(dialog.FolderName, owner, afterImageSaved: false);
+        }
+        finally
+        {
+            _choosingWorkFolder = false;
+        }
+    }
+
+    /// <summary>
+    /// 作業用フォルダを変えて保存し、開いている画面へ反映する（作業用フォルダはここでだけ変える）。設定の保存フォルダは変えない。
+    /// 設定ファイルに書けなくても、この起動中は変更後のフォルダを使う。
+    /// </summary>
+    private void SetWorkFolder(string folder, Window? owner, bool afterImageSaved)
+    {
+        if (SamePath(folder, _settings.ResolveWorkFolder())) return; // 変わらない（未指定のまま保存フォルダを使う場合も含む）
+        _settings.WorkFolder = folder;
+        try
+        {
+            _store.Save(_settings);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            ErrorLog.Write("Failed to save the working folder", ex);
+            var message = string.Format(afterImageSaved ? Strings.WorkFolderSaveFailedAfterImageFormat : Strings.WorkFolderSaveFailedFormat, ex.Message);
+            if (owner is not null && owner.IsVisible)
+                MessageBox.Show(owner, message, "AreaShot", MessageBoxButton.OK, MessageBoxImage.Warning);
+            else
+                MessageBox.Show(message, "AreaShot", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        RefreshDestinations();
+    }
+
+    private static bool SamePath(string a, string b)
+    {
+        try
+        {
+            return string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(a)),
+                Path.TrimEndingDirectorySeparator(Path.GetFullPath(b)), StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>開いているキャプチャー後ダイアログ・エディタ・設定画面の保存先の表示を更新する。</summary>
+    private void RefreshDestinations()
+    {
+        var destination = CurrentDestination();
+        foreach (var window in _app.Windows.Cast<Window>())
+        {
+            if (window is CaptureResultWindow result) result.ShowDestination(destination);
+            else if (window is EditorWindow editor) editor.ShowDestination(destination);
+        }
+        WorkFolderChanged?.Invoke(this, EventArgs.Empty);
     }
 
     // ---- 設定 ----
@@ -337,10 +484,12 @@ public sealed class AppHost : ISettingsHost, IDisposable
 
     public void ResumeHotkey() => _hotkey?.Resume();
 
-    public IReadOnlyList<string> ApplySettings(AppSettings settings, bool autoStart)
+    public IReadOnlyList<string> ApplySettings(AppSettings settings, bool autoStart, string? workFolder)
     {
         var failures = new List<string>();
         settings.Editor = _settings.Editor.Clone(); // エディタの既定値は設定画面では変えない
+        // 連番の保存先は、設定画面で入力した場合だけ変える。入力していなければ、開いている間に別の画面で変わった値を古い値で戻さない。
+        settings.WorkFolder = workFolder ?? _settings.WorkFolder;
         SettingsNormalizer.Normalize(settings);
         _settings = settings;
 
@@ -353,6 +502,9 @@ public sealed class AppHost : ISettingsHost, IDisposable
             ErrorLog.Write("Failed to save the settings", ex);
             failures.Add(string.Format(Strings.SettingsSaveFailedFormat, ex.Message));
         }
+
+        // 名前の付け方・保存先の変更を、開いている画面へ反映する（再起動は不要）。
+        RefreshDestinations();
 
         var registration = RegisterHotkeyFromSettings();
         if (registration.Status == HotkeyStatus.Failed)

@@ -322,7 +322,7 @@
     <value>参照...</value>
   </data>
   <data name="SettingsFileName" xml:space="preserve">
-    <value>ファイル名</value>
+    <value>テンプレート</value>
   </data>
   <data name="SettingsImageType" xml:space="preserve">
     <value>画像形式</value>
@@ -453,7 +453,7 @@
     <value>保存フォルダを選択</value>
   </data>
   <data name="SettingsExampleFormat" xml:space="preserve">
-    <value>例: {0}</value>
+    <value>保存例: {0}</value>
   </data>
   <data name="SettingsErrorFileNameFormat" xml:space="preserve">
     <value>ファイル名: {0}</value>
@@ -534,5 +534,103 @@
   </data>
   <data name="AutoStartNoPath" xml:space="preserve">
     <value>実行ファイルの場所を取得できませんでした。</value>
+  </data>
+  <data name="SequentialNumberExhaustedFormat" xml:space="preserve">
+    <value>連番が上限（{0}）に達したため保存できません。連番の保存先を別のフォルダにしてください。</value>
+  </data>
+  <data name="SequentialNameTooLong" xml:space="preserve">
+    <value>ファイル名またはパスが長すぎます。説明を短くするか、パスの短いフォルダを連番の保存先にしてください。</value>
+  </data>
+  <data name="SequentialNumberingFailedFormat" xml:space="preserve">
+    <value>フォルダの中を読めないため、連番を決められませんでした。
+{0}
+フォルダ: {1}</value>
+  </data>
+  <data name="NamingModeDateTemplate" xml:space="preserve">
+    <value>ファイル名テンプレート</value>
+  </data>
+  <data name="NamingModeSequential" xml:space="preserve">
+    <value>連番</value>
+  </data>
+  <data name="NamingModeSequentialDescription" xml:space="preserve">
+    <value>連番＋説明</value>
+  </data>
+  <data name="SettingsSaveFolderRole" xml:space="preserve">
+    <value>「ファイル名テンプレート」で「保存先に保存」したときの保存先です。</value>
+  </data>
+  <data name="SettingsNamingMode" xml:space="preserve">
+    <value>ファイル名の付け方</value>
+  </data>
+  <data name="SettingsTemplateHelpHeader" xml:space="preserve">
+    <value>使用できる変数・記入例</value>
+  </data>
+  <data name="SettingsTemplateExamples" xml:space="preserve">
+    <value>記入例:</value>
+  </data>
+  <data name="SettingsSequentialExampleDescription" xml:space="preserve">
+    <value>設定を開く</value>
+  </data>
+  <data name="SettingsSequentialNoteDescription" xml:space="preserve">
+    <value>保存時に説明を入力できます。</value>
+  </data>
+  <data name="SettingsDetails" xml:space="preserve">
+    <value>詳細</value>
+  </data>
+  <data name="DestinationChange" xml:space="preserve">
+    <value>フォルダ変更</value>
+  </data>
+  <data name="DestinationChangeTip" xml:space="preserve">
+    <value>連番の保存先を変更します。「名前を付けて保存」でも最初にこのフォルダを開きます。</value>
+  </data>
+  <data name="DestinationMissingSuffix" xml:space="preserve">
+    <value>（見つかりません）</value>
+  </data>
+  <data name="SaveTooltipModeFormat" xml:space="preserve">
+    <value>ファイル名の付け方: {0}</value>
+  </data>
+  <data name="WorkFolderSelectTitle" xml:space="preserve">
+    <value>連番の保存先を選択</value>
+  </data>
+  <data name="WorkFolderSaveFailedFormat" xml:space="preserve">
+    <value>連番の保存先の設定を保存できませんでした。AreaShot を終了するまでは、変更後のフォルダを使います。
+{0}</value>
+  </data>
+  <data name="WorkFolderSaveFailedAfterImageFormat" xml:space="preserve">
+    <value>画像は保存しました。
+ただし、連番の保存先の設定を保存できませんでした。AreaShot を終了するまでは、変更後のフォルダを使います。
+{0}</value>
+  </data>
+  <data name="DescriptionTitle" xml:space="preserve">
+    <value>画像を保存</value>
+  </data>
+  <data name="DescriptionLabel" xml:space="preserve">
+    <value>説明</value>
+  </data>
+  <data name="DescriptionFolder" xml:space="preserve">
+    <value>保存先:</value>
+  </data>
+  <data name="DescriptionName" xml:space="preserve">
+    <value>保存名:</value>
+  </data>
+  <data name="DescriptionOptional" xml:space="preserve">
+    <value>説明は省略できます。</value>
+  </data>
+  <data name="DescriptionNumberChanged" xml:space="preserve">
+    <value>保存先に別の画像が保存されたため、番号が変わりました。保存名を確認して、もう一度［保存］を押してください。</value>
+  </data>
+  <data name="DescriptionSave" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="DescriptionCancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="SettingsWorkFolderLabel" xml:space="preserve">
+    <value>連番の保存先</value>
+  </data>
+  <data name="DestinationFolder" xml:space="preserve">
+    <value>保存先:</value>
+  </data>
+  <data name="SettingsErrorWorkFolderInvalid" xml:space="preserve">
+    <value>連番の保存先: パスに使えない文字が含まれています。</value>
   </data>
 </root>

@@ -20,6 +20,12 @@ public static class SettingsNormalizer
             fixes.Add($"FileNameTemplate: '{s.FileNameTemplate}' → default");
             s.FileNameTemplate = FileNameTemplate.Default;
         }
+        if (!Enum.IsDefined(s.NamingMode))
+        {
+            fixes.Add($"NamingMode: {s.NamingMode} → DateTemplate");
+            s.NamingMode = FileNamingMode.DateTemplate;
+        }
+        s.WorkFolder ??= "";
         if (!Enum.IsDefined(s.ImageFormat))
         {
             fixes.Add($"ImageFormat: {s.ImageFormat} → Png");

@@ -322,7 +322,7 @@ Restart AreaShot now?</value>
     <value>Browse...</value>
   </data>
   <data name="SettingsFileName" xml:space="preserve">
-    <value>File name</value>
+    <value>Template</value>
   </data>
   <data name="SettingsImageType" xml:space="preserve">
     <value>Image format</value>
@@ -534,5 +534,103 @@ Do you want to replace it?</value>
   </data>
   <data name="AutoStartNoPath" xml:space="preserve">
     <value>Could not determine the location of the executable.</value>
+  </data>
+  <data name="SequentialNumberExhaustedFormat" xml:space="preserve">
+    <value>The sequence number has reached its limit ({0}). Choose another folder for sequential numbers.</value>
+  </data>
+  <data name="SequentialNameTooLong" xml:space="preserve">
+    <value>The file name or path is too long. Shorten the description, or choose a folder with a shorter path.</value>
+  </data>
+  <data name="SequentialNumberingFailedFormat" xml:space="preserve">
+    <value>Could not determine the sequence number because the folder could not be read.
+{0}
+Folder: {1}</value>
+  </data>
+  <data name="NamingModeDateTemplate" xml:space="preserve">
+    <value>File name template</value>
+  </data>
+  <data name="NamingModeSequential" xml:space="preserve">
+    <value>Sequential number</value>
+  </data>
+  <data name="NamingModeSequentialDescription" xml:space="preserve">
+    <value>Sequential number + description</value>
+  </data>
+  <data name="SettingsSaveFolderRole" xml:space="preserve">
+    <value>Where "Save to folder" saves with the file name template.</value>
+  </data>
+  <data name="SettingsNamingMode" xml:space="preserve">
+    <value>File naming</value>
+  </data>
+  <data name="SettingsTemplateHelpHeader" xml:space="preserve">
+    <value>Variables and examples</value>
+  </data>
+  <data name="SettingsTemplateExamples" xml:space="preserve">
+    <value>Examples:</value>
+  </data>
+  <data name="SettingsSequentialExampleDescription" xml:space="preserve">
+    <value>Open settings</value>
+  </data>
+  <data name="SettingsSequentialNoteDescription" xml:space="preserve">
+    <value>You enter a description when saving.</value>
+  </data>
+  <data name="SettingsDetails" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="DestinationChange" xml:space="preserve">
+    <value>Change folder</value>
+  </data>
+  <data name="DestinationChangeTip" xml:space="preserve">
+    <value>Change the folder for sequential numbers. "Save as" also opens this folder first.</value>
+  </data>
+  <data name="DestinationMissingSuffix" xml:space="preserve">
+    <value> (not found)</value>
+  </data>
+  <data name="SaveTooltipModeFormat" xml:space="preserve">
+    <value>File naming: {0}</value>
+  </data>
+  <data name="WorkFolderSelectTitle" xml:space="preserve">
+    <value>Select the folder for sequential numbers</value>
+  </data>
+  <data name="WorkFolderSaveFailedFormat" xml:space="preserve">
+    <value>Could not save the setting of the folder for sequential numbers. The new folder is used until AreaShot exits.
+{0}</value>
+  </data>
+  <data name="WorkFolderSaveFailedAfterImageFormat" xml:space="preserve">
+    <value>The image was saved.
+However, the setting of the folder for sequential numbers could not be saved. The new folder is used until AreaShot exits.
+{0}</value>
+  </data>
+  <data name="DescriptionTitle" xml:space="preserve">
+    <value>Save image</value>
+  </data>
+  <data name="DescriptionLabel" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="DescriptionFolder" xml:space="preserve">
+    <value>Folder:</value>
+  </data>
+  <data name="DescriptionName" xml:space="preserve">
+    <value>File name:</value>
+  </data>
+  <data name="DescriptionOptional" xml:space="preserve">
+    <value>The description is optional.</value>
+  </data>
+  <data name="DescriptionNumberChanged" xml:space="preserve">
+    <value>The number changed because another image was saved to the folder. Check the file name and press Save again.</value>
+  </data>
+  <data name="DescriptionSave" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="DescriptionCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="SettingsWorkFolderLabel" xml:space="preserve">
+    <value>Folder for sequential numbers</value>
+  </data>
+  <data name="DestinationFolder" xml:space="preserve">
+    <value>Save to:</value>
+  </data>
+  <data name="SettingsErrorWorkFolderInvalid" xml:space="preserve">
+    <value>Folder for sequential numbers: the path contains characters that cannot be used.</value>
   </data>
 </root>

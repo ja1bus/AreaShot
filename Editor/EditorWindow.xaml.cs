@@ -40,13 +40,14 @@ public partial class EditorWindow : Window
     private PointD _editingPosition;
     private (ArgbColor Color, string Font, double Size) _editingStyle;
 
-    public EditorWindow(CapturedImage image, EditorDefaults defaults, string saveTooltip)
+    public EditorWindow(CapturedImage image, EditorDefaults defaults, SaveDestination destination)
     {
         InitializeComponent();
         _image = image;
         _defaults = defaults.Clone();
         _defaults.FontFamily = FontCatalog.Resolve(_defaults.FontFamily);
-        SaveButton.ToolTip = saveTooltip;
+        ShowDestination(destination);
+        Destination.ChangeRequested += (_, _) => WorkFolderChangeRequested?.Invoke(this);
 
         _canvas = new EditorCanvas(image, _history);
         CanvasHost.Children.Insert(0, _canvas);
@@ -80,6 +81,16 @@ public partial class EditorWindow : Window
     /// <summary>出力（コピー・保存・名前を付けて保存）が選ばれた。成功したら AppHost が閉じる。</summary>
     public event Action<EditorWindow, CaptureAction>? OutputRequested;
 
+    /// <summary>［変更...］が押された。作業用フォルダの選択と、開いている画面への反映は AppHost が行う（V1.3.0）。</summary>
+    public event Action<Window>? WorkFolderChangeRequested;
+
+    /// <summary>保存先の表示と「保存先に保存」のツールチップを更新する（作業用フォルダ・設定の変更時）。</summary>
+    public void ShowDestination(SaveDestination destination)
+    {
+        Destination.Show(destination);
+        SaveButton.ToolTip = destination.SaveTooltip;
+    }
+
     /// <summary>最後に使った色・線幅・フォント・文字サイズ（閉じるときに設定へ保存する）。</summary>
     public EditorDefaults Defaults => _defaults.Clone();
 
@@ -89,7 +100,7 @@ public partial class EditorWindow : Window
     public void SizeToImage(double dpiScale)
     {
         Width = Math.Max(MinWidth, Math.Max(760, _image.Width / dpiScale + 60));
-        Height = Math.Max(MinHeight, Math.Max(480, _image.Height / dpiScale + 190));
+        Height = Math.Max(MinHeight, Math.Max(480, _image.Height / dpiScale + 220)); // 保存先の表示を含む
     }
 
     /// <summary>元画像と編集オブジェクトを合成した画像（元画像と同じピクセルサイズ）。</summary>

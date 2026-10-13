@@ -27,18 +27,29 @@ public partial class CaptureResultWindow : Window
     private bool _actionHandled;
     private long _shownAt = long.MaxValue;
 
-    public CaptureResultWindow(CapturedImage image, string saveTooltip)
+    public CaptureResultWindow(CapturedImage image, SaveDestination destination)
     {
         InitializeComponent();
         Image = image;
         Preview.Source = image.Source;
         SizeText.Text = $"{image.Width} × {image.Height} px";
-        SaveButton.ToolTip = saveTooltip;
+        ShowDestination(destination);
+        Destination.ChangeRequested += (_, _) => WorkFolderChangeRequested?.Invoke(this);
     }
 
     public CapturedImage Image { get; }
 
-    /// <summary>最下段のコピーボタン。マウスを離した点に合わせてダイアログを置くために使う。</summary>
+    /// <summary>［変更...］が押された。作業用フォルダの選択と、開いている画面への反映は AppHost が行う（V1.3.0）。</summary>
+    public event Action<Window>? WorkFolderChangeRequested;
+
+    /// <summary>保存先の表示と「保存先に保存」のツールチップを更新する（作業用フォルダ・設定の変更時）。</summary>
+    public void ShowDestination(SaveDestination destination)
+    {
+        Destination.Show(destination);
+        SaveButton.ToolTip = destination.SaveTooltip;
+    }
+
+    /// <summary>最下段の左のコピーボタン。マウスを離した点に合わせてダイアログを置くために使う。</summary>
     public FrameworkElement PrimaryButton => CopyButton;
 
     /// <summary>操作が選ばれた。処理が成功したら AppHost が <see cref="CloseAfterAction"/> を呼ぶ。</summary>

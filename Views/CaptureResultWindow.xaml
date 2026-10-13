@@ -4,7 +4,7 @@
         xmlns:l="clr-namespace:AreaShot.Core.Localization;assembly=AreaShot.Core"
         xmlns:v="clr-namespace:AreaShot.Views"
         Title="{x:Static l:Strings.CaptureResultTitle}"
-        Width="460" Height="430"
+        Width="460" Height="440"
         ResizeMode="NoResize"
         ShowInTaskbar="True"
         Topmost="True"
@@ -16,24 +16,22 @@
             <Setter Property="Height" Value="34" />
             <Setter Property="Margin" Value="4" />
             <Setter Property="Padding" Value="10,0" />
-            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
         </Style>
     </Window.Resources>
     <DockPanel Margin="12">
-        <!-- 閉じるは上段の右。よく使うコピーは最下段に横幅いっぱいで置き、マウスを離した点の真下に来るようにする（仕様書 §6） -->
-        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
-            <Button DockPanel.Dock="Right" Content="{x:Static l:Strings.ResultClose}" IsCancel="True" Click="OnCloseClick"
-                    Height="26" Margin="4,0" HorizontalContentAlignment="Center" />
-            <TextBlock x:Name="SizeText" Margin="4,0" VerticalAlignment="Center" Foreground="#444" />
-        </DockPanel>
-        <Button x:Name="CopyButton" DockPanel.Dock="Bottom" Content="{x:Static l:Strings.ResultCopy}" IsDefault="True" Click="OnCopy"
-                Height="40" FontWeight="SemiBold" HorizontalContentAlignment="Center" />
-        <UniformGrid DockPanel.Dock="Bottom" Columns="2" Margin="0,8,0,0">
-            <Button Content="{x:Static l:Strings.ResultEdit}" Click="OnEdit" />
-            <Button x:Name="SaveButton" Content="{x:Static l:Strings.ResultSave}" Click="OnSave" />
-            <Button Content="{x:Static l:Strings.ResultSaveAs}" Click="OnSaveAs" />
+        <TextBlock x:Name="SizeText" DockPanel.Dock="Top" Margin="4,0,4,6" Foreground="#444" />
+        <!-- 6 つのボタンは同じ大きさで 2 列 × 3 段（V1.3.0）。よく使うものほど下の段に置き、マウスを離した点に重ねるコピーは最下段の左。
+             画像を捨てる「もう一度」「閉じる」はコピーから離して最上段にまとめる（仕様書 §6）。 -->
+        <UniformGrid DockPanel.Dock="Bottom" Columns="2" Rows="3" Margin="0,6,0,0">
             <Button Content="{x:Static l:Strings.ResultRetry}" Click="OnRetry" />
+            <Button Content="{x:Static l:Strings.ResultClose}" IsCancel="True" Click="OnCloseClick" />
+            <Button Content="{x:Static l:Strings.ResultEdit}" Click="OnEdit" />
+            <Button Content="{x:Static l:Strings.ResultSaveAs}" Click="OnSaveAs" />
+            <Button x:Name="CopyButton" Content="{x:Static l:Strings.ResultCopy}" IsDefault="True" Click="OnCopy" />
+            <Button x:Name="SaveButton" Content="{x:Static l:Strings.ResultSave}" Click="OnSave" />
         </UniformGrid>
+        <v:DestinationPanel x:Name="Destination" DockPanel.Dock="Bottom" Margin="4,8,4,0" />
         <Border Background="#E0E0E0" BorderBrush="#C8C8C8" BorderThickness="1" Margin="4,0">
             <Image x:Name="Preview" Stretch="Uniform" StretchDirection="DownOnly" Margin="6"
                    RenderOptions.BitmapScalingMode="HighQuality" />

@@ -32,142 +32,187 @@
             </Setter>
         </Style>
     </Window.Resources>
-    <StackPanel Margin="14">
-        <GroupBox Header="{x:Static l:Strings.SettingsGroupSave}">
-            <StackPanel>
-                <TextBlock Text="{x:Static l:Strings.SettingsSaveFolder}" Margin="0,0,0,3" />
-                <DockPanel>
-                    <Button DockPanel.Dock="Right" Content="{x:Static l:Strings.SettingsBrowse}" MinWidth="72" Padding="8,0" Margin="6,0,0,0" Click="OnBrowse" />
-                    <TextBox x:Name="FolderBox" VerticalContentAlignment="Center" Height="26" />
-                </DockPanel>
-                <TextBlock x:Name="FolderNote" Style="{StaticResource Note}" Margin="0,2,0,8" />
+    <!-- 内容が作業領域に入らない場合はスクロールする。入力の誤りと［保存］［キャンセル］は下に固定する（V1.3.0）。 -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+            <StackPanel Margin="14,14,14,0">
+                <GroupBox Header="{x:Static l:Strings.SettingsGroupSave}">
+                    <StackPanel>
+                        <!-- ファイル名の付け方（V1.3.0）。フォルダ欄とテンプレート欄は方式に合わせて切り替え、どちらの入力も残す。 -->
+                        <TextBlock Text="{x:Static l:Strings.SettingsNamingMode}" Margin="0,0,0,3" />
+                        <ComboBox x:Name="NamingCombo" HorizontalAlignment="Left" MinWidth="260" Height="26" VerticalContentAlignment="Center"
+                                  SelectionChanged="OnNamingChanged" />
 
-                <TextBlock Text="{x:Static l:Strings.SettingsFileName}" Margin="0,0,0,3" />
-                <TextBox x:Name="TemplateBox" VerticalContentAlignment="Center" Height="26" TextChanged="OnTemplateChanged" />
-                <TextBlock x:Name="TemplatePreview" Margin="0,3,0,0" TextWrapping="Wrap" />
-                <TextBlock x:Name="TokenHelp" Style="{StaticResource Note}" Margin="0,2,0,8" />
+                        <StackPanel x:Name="SaveFolderPanel" Margin="0,8,0,0">
+                            <TextBlock Text="{x:Static l:Strings.SettingsSaveFolder}" Margin="0,0,0,3" />
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="{x:Static l:Strings.SettingsBrowse}" MinWidth="72" Padding="8,0" Margin="6,0,0,0" Click="OnBrowse" />
+                                <TextBox x:Name="FolderBox" VerticalContentAlignment="Center" Height="26" />
+                            </DockPanel>
+                            <TextBlock x:Name="FolderNote" Style="{StaticResource Note}" Margin="0,2,0,0" />
+                        </StackPanel>
 
-                <!-- 見出しの列は文字の長さに合わせる（最低 80）。 -->
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" MinWidth="80" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition />
-                        <RowDefinition />
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="{x:Static l:Strings.SettingsImageType}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                    <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
-                        <RadioButton x:Name="PngRadio" Content="PNG" GroupName="Format" VerticalAlignment="Center" Margin="0,0,16,0" Checked="OnFormatChanged" />
-                        <RadioButton x:Name="JpegRadio" Content="JPEG" GroupName="Format" VerticalAlignment="Center" Checked="OnFormatChanged" />
+                        <!-- 連番の保存先（内部では作業用フォルダ）。キャプチャー後ダイアログ・エディタの［フォルダ変更］でも変わる。 -->
+                        <StackPanel x:Name="WorkFolderPanel" Margin="0,8,0,0">
+                            <TextBlock Text="{x:Static l:Strings.SettingsWorkFolderLabel}" Margin="0,0,0,3" />
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="{x:Static l:Strings.SettingsBrowse}" MinWidth="72" Padding="8,0" Margin="6,0,0,0" Click="OnBrowseWorkFolder" />
+                                <TextBox x:Name="WorkFolderBox" VerticalContentAlignment="Center" Height="26" TextChanged="OnWorkFolderTextChanged" />
+                            </DockPanel>
+                        </StackPanel>
+
+                        <StackPanel x:Name="TemplatePanel" Margin="0,8,0,0">
+                            <TextBlock Text="{x:Static l:Strings.SettingsFileName}" Margin="0,0,0,3" />
+                            <TextBox x:Name="TemplateBox" VerticalContentAlignment="Center" Height="26" TextChanged="OnTemplateChanged" />
+                            <TextBlock x:Name="TemplatePreview" Margin="0,3,0,0" TextWrapping="Wrap" />
+                            <Expander Header="{x:Static l:Strings.SettingsTemplateHelpHeader}" Margin="0,2,0,0" FontSize="12" Foreground="#444">
+                                <StackPanel Margin="18,2,0,0">
+                                    <TextBlock x:Name="TokenHelp" Style="{StaticResource Note}" />
+                                    <TextBlock x:Name="TemplateExamples" Style="{StaticResource Note}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+
+                        <StackPanel x:Name="SequentialPanel" Margin="0,3,0,0">
+                            <TextBlock x:Name="SequentialPreview" TextWrapping="Wrap" />
+                            <TextBlock x:Name="SequentialNote" Style="{StaticResource Note}" Margin="0,2,0,0" />
+                        </StackPanel>
+                        <Border Height="8" />
+
+                        <!-- 見出しの列は文字の長さに合わせる（最低 80）。 -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="80" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="{x:Static l:Strings.SettingsImageType}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
+                                <RadioButton x:Name="PngRadio" Content="PNG" GroupName="Format" VerticalAlignment="Center" Margin="0,0,16,0" Checked="OnFormatChanged" />
+                                <RadioButton x:Name="JpegRadio" Content="JPEG" GroupName="Format" VerticalAlignment="Center" Checked="OnFormatChanged" />
+                            </StackPanel>
+                            <TextBlock Grid.Row="1" Text="{x:Static l:Strings.SettingsJpegQuality}" VerticalAlignment="Center" Margin="0,6,10,0" />
+                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,6,0,0">
+                                <Slider x:Name="QualitySlider" Minimum="1" Maximum="100" Width="260" VerticalAlignment="Center"
+                                        IsSnapToTickEnabled="True" TickFrequency="1" SmallChange="1" LargeChange="5"
+                                        ValueChanged="OnQualityChanged" />
+                                <TextBlock x:Name="QualityText" Width="40" Margin="8,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
-                    <TextBlock Grid.Row="1" Text="{x:Static l:Strings.SettingsJpegQuality}" VerticalAlignment="Center" Margin="0,6,10,0" />
-                    <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,6,0,0">
-                        <Slider x:Name="QualitySlider" Minimum="1" Maximum="100" Width="260" VerticalAlignment="Center"
-                                IsSnapToTickEnabled="True" TickFrequency="1" SmallChange="1" LargeChange="5"
-                                ValueChanged="OnQualityChanged" />
-                        <TextBlock x:Name="QualityText" Width="40" Margin="8,0,0,0" VerticalAlignment="Center" />
+                </GroupBox>
+
+                <GroupBox Header="{x:Static l:Strings.SettingsGroupCapture}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" MinWidth="100" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="{x:Static l:Strings.SettingsShortcut}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <v:ShortcutBox x:Name="HotkeyBox" Width="220" Height="26" />
+                            <Button Content="{x:Static l:Strings.SettingsResetDefault}" Margin="8,0,0,0" Padding="8,0" Click="OnResetHotkey" />
+                        </StackPanel>
+                        <TextBlock x:Name="HotkeyStatusText" Grid.Row="1" Grid.Column="1" Margin="0,4,0,0" TextWrapping="Wrap" />
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="{x:Static l:Strings.SettingsGroupQuick}">
+                    <StackPanel>
+                        <CheckBox x:Name="QuickCheck" Content="{x:Static l:Strings.SettingsQuickEnable}"
+                                  Margin="0,2" Checked="OnQuickEnabledChanged" Unchecked="OnQuickEnabledChanged" />
+                        <Grid x:Name="QuickGrid" Margin="20,6,4,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="18" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{x:Static l:Strings.QuickActionCopy}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <ComboBox x:Name="QuickCopyCombo" Grid.Row="0" Grid.Column="1" Margin="0,2" SelectionChanged="OnQuickKeyChanged" />
+                            <TextBlock Grid.Row="0" Grid.Column="3" Text="{x:Static l:Strings.QuickActionEdit}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <ComboBox x:Name="QuickEditCombo" Grid.Row="0" Grid.Column="4" Margin="0,2" SelectionChanged="OnQuickKeyChanged" />
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static l:Strings.QuickActionSave}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <ComboBox x:Name="QuickSaveCombo" Grid.Row="1" Grid.Column="1" Margin="0,2" SelectionChanged="OnQuickKeyChanged" />
+                            <TextBlock Grid.Row="1" Grid.Column="3" Text="{x:Static l:Strings.QuickActionSaveAs}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <ComboBox x:Name="QuickSaveAsCombo" Grid.Row="1" Grid.Column="4" Margin="0,2" SelectionChanged="OnQuickKeyChanged" />
+                        </Grid>
+                        <CheckBox x:Name="QuickHintCheck" Content="{x:Static l:Strings.SettingsQuickHint}" Margin="20,4,0,2" />
+                        <!-- キーの重なりは対応が必要なため折りたたまない。機能の説明は「詳細」に折りたたむ（V1.3.0）。 -->
+                        <TextBlock x:Name="QuickErrorText" Margin="20,2,0,0" TextWrapping="Wrap" Foreground="Firebrick" FontSize="12" Visibility="Collapsed" />
+                        <Expander Header="{x:Static l:Strings.SettingsDetails}" Margin="20,2,0,0" FontSize="12" Foreground="#444">
+                            <TextBlock x:Name="QuickStatusText" Margin="18,2,0,0" TextWrapping="Wrap" Style="{StaticResource Note}" />
+                        </Expander>
                     </StackPanel>
-                </Grid>
-            </StackPanel>
-        </GroupBox>
+                </GroupBox>
 
-        <GroupBox Header="{x:Static l:Strings.SettingsGroupCapture}">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" MinWidth="100" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition />
-                    <RowDefinition />
-                </Grid.RowDefinitions>
-                <TextBlock Text="{x:Static l:Strings.SettingsShortcut}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <v:ShortcutBox x:Name="HotkeyBox" Width="220" Height="26" />
-                    <Button Content="{x:Static l:Strings.SettingsResetDefault}" Margin="8,0,0,0" Padding="8,0" Click="OnResetHotkey" />
+                <GroupBox Header="{x:Static l:Strings.SettingsGroupOther}">
+                    <StackPanel>
+                        <CheckBox x:Name="AutoStartCheck" Content="{x:Static l:Strings.SettingsAutoStart}" Margin="0,2" />
+                        <CheckBox x:Name="NotifyCheck" Content="{x:Static l:Strings.SettingsNotify}" Margin="0,2" />
+                        <!-- 表示言語（V1.1.0）。変更は再起動後に反映する（保存時に再起動を確認する）。 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,2">
+                            <TextBlock Text="{x:Static l:Strings.SettingsLanguage}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <ComboBox x:Name="LanguageCombo" MinWidth="220" />
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="1" Margin="14,4,14,14">
+            <TextBlock x:Name="ErrorText" Foreground="#C00000" TextWrapping="Wrap" Margin="0,0,0,8" Visibility="Collapsed" />
+
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="{x:Static l:Strings.SettingsSave}" MinWidth="96" Padding="10,0" Height="30" IsDefault="True" Click="OnSave" />
+                    <!-- Show()（モーダルでない）で開くため IsCancel は効かない。Click で明示的に閉じる。 -->
+                    <Button Content="{x:Static l:Strings.SettingsCancel}" MinWidth="96" Padding="10,0" Height="30" Margin="8,0,0,0" IsCancel="True" Click="OnCancel" />
                 </StackPanel>
-                <TextBlock x:Name="HotkeyStatusText" Grid.Row="1" Grid.Column="1" Margin="0,4,0,0" TextWrapping="Wrap" />
-            </Grid>
-        </GroupBox>
-
-        <GroupBox Header="{x:Static l:Strings.SettingsGroupQuick}">
-            <StackPanel>
-                <CheckBox x:Name="QuickCheck" Content="{x:Static l:Strings.SettingsQuickEnable}"
-                          Margin="0,2" Checked="OnQuickEnabledChanged" Unchecked="OnQuickEnabledChanged" />
-                <Grid x:Name="QuickGrid" Margin="20,6,4,2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="18" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition />
-                        <RowDefinition />
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{x:Static l:Strings.QuickActionCopy}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                    <ComboBox x:Name="QuickCopyCombo" Grid.Row="0" Grid.Column="1" Margin="0,2" SelectionChanged="OnQuickKeyChanged" />
-                    <TextBlock Grid.Row="0" Grid.Column="3" Text="{x:Static l:Strings.QuickActionEdit}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                    <ComboBox x:Name="QuickEditCombo" Grid.Row="0" Grid.Column="4" Margin="0,2" SelectionChanged="OnQuickKeyChanged" />
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static l:Strings.QuickActionSave}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                    <ComboBox x:Name="QuickSaveCombo" Grid.Row="1" Grid.Column="1" Margin="0,2" SelectionChanged="OnQuickKeyChanged" />
-                    <TextBlock Grid.Row="1" Grid.Column="3" Text="{x:Static l:Strings.QuickActionSaveAs}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                    <ComboBox x:Name="QuickSaveAsCombo" Grid.Row="1" Grid.Column="4" Margin="0,2" SelectionChanged="OnQuickKeyChanged" />
-                </Grid>
-                <CheckBox x:Name="QuickHintCheck" Content="{x:Static l:Strings.SettingsQuickHint}" Margin="20,4,0,2" />
-                <TextBlock x:Name="QuickStatusText" Margin="20,2,0,0" TextWrapping="Wrap" Style="{StaticResource Note}" />
-            </StackPanel>
-        </GroupBox>
-
-        <GroupBox Header="{x:Static l:Strings.SettingsGroupOther}">
-            <StackPanel>
-                <CheckBox x:Name="AutoStartCheck" Content="{x:Static l:Strings.SettingsAutoStart}" Margin="0,2" />
-                <CheckBox x:Name="NotifyCheck" Content="{x:Static l:Strings.SettingsNotify}" Margin="0,2" />
-                <!-- 表示言語（V1.1.0）。変更は再起動後に反映する（保存時に再起動を確認する）。 -->
-                <StackPanel Orientation="Horizontal" Margin="0,6,0,2">
-                    <TextBlock Text="{x:Static l:Strings.SettingsLanguage}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                    <ComboBox x:Name="LanguageCombo" MinWidth="220" />
+                <StackPanel VerticalAlignment="Center">
+                    <!-- 取扱説明書は Web にだけ置く。表示言語に合わせた URL を既定のブラウザーで開く（仕様書 §14.5）。 -->
+                    <TextBlock Margin="0,0,0,2">
+                        <Hyperlink x:Name="ManualLink" Click="OnOpenManual">
+                            <Run Text="{x:Static l:Strings.SettingsManualLink}" />
+                        </Hyperlink>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource Note}">
+                        <Run x:Name="VersionRun" />
+                        <Run Text="  © ja1bus" />
+                    </TextBlock>
+                    <!-- ライセンス表記（V1.2.0。仕様書 §14.6）。全文は同梱の LICENSE をこの画面から表示し、Web だけに頼らない。 -->
+                    <TextBlock Style="{StaticResource Note}">
+                        <Hyperlink Click="OnShowLicense" ToolTip="{x:Static l:Strings.SettingsLicenseToolTip}">
+                            <Run Text="{x:Static l:Strings.SettingsLicenseLink}" />
+                        </Hyperlink>
+                        <Run Text=" · " />
+                        <Hyperlink x:Name="SourceLink" Click="OnOpenSource">
+                            <Run Text="{x:Static l:Strings.SettingsSourceLink}" />
+                        </Hyperlink>
+                        <Run Text=" · " />
+                        <Hyperlink Click="OnOpenNotices" ToolTip="{x:Static l:Strings.SettingsNoticesToolTip}">
+                            <Run Text="{x:Static l:Strings.SettingsNoticesLink}" />
+                        </Hyperlink>
+                    </TextBlock>
                 </StackPanel>
-            </StackPanel>
-        </GroupBox>
-
-        <TextBlock x:Name="ErrorText" Foreground="#C00000" TextWrapping="Wrap" Margin="0,0,0,8" Visibility="Collapsed" />
-
-        <DockPanel>
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <Button Content="{x:Static l:Strings.SettingsSave}" MinWidth="96" Padding="10,0" Height="30" IsDefault="True" Click="OnSave" />
-                <!-- Show()（モーダルでない）で開くため IsCancel は効かない。Click で明示的に閉じる。 -->
-                <Button Content="{x:Static l:Strings.SettingsCancel}" MinWidth="96" Padding="10,0" Height="30" Margin="8,0,0,0" IsCancel="True" Click="OnCancel" />
-            </StackPanel>
-            <StackPanel VerticalAlignment="Center">
-                <!-- 取扱説明書は Web にだけ置く。表示言語に合わせた URL を既定のブラウザーで開く（仕様書 §14.5）。 -->
-                <TextBlock Margin="0,0,0,2">
-                    <Hyperlink x:Name="ManualLink" Click="OnOpenManual">
-                        <Run Text="{x:Static l:Strings.SettingsManualLink}" />
-                    </Hyperlink>
-                </TextBlock>
-                <TextBlock Style="{StaticResource Note}">
-                    <Run x:Name="VersionRun" />
-                    <Run Text="  © ja1bus" />
-                </TextBlock>
-                <!-- ライセンス表記（V1.2.0。仕様書 §14.6）。全文は同梱の LICENSE をこの画面から表示し、Web だけに頼らない。 -->
-                <TextBlock Style="{StaticResource Note}">
-                    <Hyperlink Click="OnShowLicense" ToolTip="{x:Static l:Strings.SettingsLicenseToolTip}">
-                        <Run Text="{x:Static l:Strings.SettingsLicenseLink}" />
-                    </Hyperlink>
-                    <Run Text=" · " />
-                    <Hyperlink x:Name="SourceLink" Click="OnOpenSource">
-                        <Run Text="{x:Static l:Strings.SettingsSourceLink}" />
-                    </Hyperlink>
-                    <Run Text=" · " />
-                    <Hyperlink Click="OnOpenNotices" ToolTip="{x:Static l:Strings.SettingsNoticesToolTip}">
-                        <Run Text="{x:Static l:Strings.SettingsNoticesLink}" />
-                    </Hyperlink>
-                </TextBlock>
-            </StackPanel>
-        </DockPanel>
-    </StackPanel>
+            </DockPanel>
+        </StackPanel>
+    </Grid>
 </Window>

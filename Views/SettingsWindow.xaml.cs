@@ -18,11 +18,18 @@ public interface ISettingsHost
     AppSettings Settings { get; }
     HotkeyRegistration HotkeyRegistration { get; }
     event EventHandler? HotkeyRegistrationChanged;
+
+    /// <summary>作業用フォルダ（連番の保存先）が変わった（設定画面を開いている間に別の画面で変えた場合。V1.3.0）。</summary>
+    event EventHandler? WorkFolderChanged;
+
     void SuspendHotkey();
     void ResumeHotkey();
 
-    /// <summary>設定を適用・保存する。失敗した項目のメッセージを返す（成功なら空）。</summary>
-    IReadOnlyList<string> ApplySettings(AppSettings settings, bool autoStart);
+    /// <summary>
+    /// 設定を適用・保存する。失敗した項目のメッセージを返す（成功なら空）。
+    /// <paramref name="workFolder"/> は設定画面で連番の保存先を入力した場合だけ渡す（null は変えない）。
+    /// </summary>
+    IReadOnlyList<string> ApplySettings(AppSettings settings, bool autoStart, string? workFolder);
 
     /// <summary>
     /// 表示言語が今の表示と変わっていれば、再起動するか確認する（保存に成功した後に呼ぶ）。
@@ -40,6 +47,9 @@ public partial class SettingsWindow : Window
     private readonly ISettingsHost _host;
     private readonly AppSettings _draft;
     private bool _suspended;
+    private bool _loadingWorkFolder;
+    /// <summary>連番の保存先の欄を利用者が書き換えた。書き換えていなければ、別の画面での変更を表示に反映し、保存しても変えない。</summary>
+    private bool _workFolderEdited;
 
     public SettingsWindow(ISettingsHost host)
     {
@@ -47,11 +57,20 @@ public partial class SettingsWindow : Window
         _host = host;
         _draft = host.Settings.Clone();
 
+        // 内容が作業領域より高い場合はスクロールする（［保存］［キャンセル］は下に固定）。
+        MaxHeight = SystemParameters.WorkArea.Height;
+
         FolderBox.Text = _draft.SaveFolder;
-        FolderNote.Text = string.Format(Strings.SettingsFolderNoteFormat, AppSettings.DefaultSaveFolder);
+        FolderNote.Text = FolderNoteText(AppSettings.DefaultSaveFolder);
+        FolderBox.TextChanged += (_, _) => { if (!_workFolderEdited) LoadWorkFolder(); };
+        LoadWorkFolder();
+        NamingCombo.ItemsSource = FileNamingModes.All.Select(m => new NamingChoice(m)).ToList();
+        NamingCombo.SelectedIndex = Math.Max(0, FileNamingModes.All.ToList().IndexOf(_draft.NamingMode));
         TemplateBox.Text = _draft.FileNameTemplate;
         TokenHelp.Text = string.Format(Strings.SettingsTokenHelpFormat,
             string.Join("  ", FileNameTemplate.Tokens.Select(t => $"{t.Token}={t.Description}")));
+        TemplateExamples.Text = Strings.SettingsTemplateExamples + "\n" + string.Join("\n",
+            TemplateExampleList.Select(t => $"  {t}  →  {FileNameTemplate.Format(t, DateTime.Now)}"));
         PngRadio.IsChecked = _draft.ImageFormat == ImageFormatKind.Png;
         JpegRadio.IsChecked = _draft.ImageFormat == ImageFormatKind.Jpeg;
         QualitySlider.Value = _draft.JpegQuality;
@@ -79,11 +98,78 @@ public partial class SettingsWindow : Window
         HotkeyBox.CaptureEnded += (_, _) => Resume();
         HotkeyBox.ShortcutChanged += (_, _) => ShowHotkeyStatus();
         _host.HotkeyRegistrationChanged += OnRegistrationChanged;
+        _host.WorkFolderChanged += OnWorkFolderChanged;
 
         UpdateTemplatePreview();
+        UpdateNamingPanels();
         UpdateQualityEnabled();
         ShowHotkeyStatus();
         UpdateQuickEnabled();
+    }
+
+    /// <summary>「使用できる変数・記入例」に出すテンプレートの例。</summary>
+    private static readonly string[] TemplateExampleList =
+        [FileNameTemplate.Default, "{yyyy}-{MM}-{dd}_{HH}{mm}{ss}", "capture_{yyyy}{MM}{dd}"];
+
+    /// <summary>保存フォルダの下の説明（役割と、空欄の場合の保存先）。</summary>
+    public static string FolderNoteText(string defaultFolder) =>
+        Strings.SettingsSaveFolderRole + "\n" + string.Format(Strings.SettingsFolderNoteFormat, defaultFolder);
+
+    /// <summary>ファイル名の付け方の選択肢（表示名は ToString）。</summary>
+    private sealed record NamingChoice(FileNamingMode Mode)
+    {
+        public override string ToString() => FileNamingModes.Describe(Mode);
+    }
+
+    private FileNamingMode SelectedNamingMode => (NamingCombo.SelectedItem as NamingChoice)?.Mode ?? FileNamingMode.DateTemplate;
+
+    private void OnNamingChanged(object sender, SelectionChangedEventArgs e) => UpdateNamingPanels();
+
+    private void OnWorkFolderChanged(object? sender, EventArgs e)
+    {
+        if (!_workFolderEdited) LoadWorkFolder();
+    }
+
+    private void OnWorkFolderTextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!_loadingWorkFolder) _workFolderEdited = true;
+    }
+
+    /// <summary>
+    /// 連番の保存先の欄に今の値を入れる。未指定（保存フォルダを使う）の場合は、入力中の保存フォルダを見せる
+    /// （書き換えずに保存すれば未指定のまま残り、保存フォルダに合わせて変わる）。
+    /// </summary>
+    private void LoadWorkFolder()
+    {
+        if (WorkFolderBox is null || FolderBox is null) return;
+        var work = _host.Settings.WorkFolder;
+        _loadingWorkFolder = true;
+        WorkFolderBox.Text = string.IsNullOrWhiteSpace(work) ? ExpandFolder(FolderBox.Text) : Environment.ExpandEnvironmentVariables(work.Trim());
+        _loadingWorkFolder = false;
+    }
+
+    private static string ExpandFolder(string text) =>
+        string.IsNullOrWhiteSpace(text) ? AppSettings.DefaultSaveFolder : Environment.ExpandEnvironmentVariables(text.Trim());
+
+    /// <summary>
+    /// ファイル名テンプレートでは保存フォルダとテンプレートの欄、連番では連番の保存先と保存例を出す（V1.3.0）。
+    /// 見せるフォルダは 1 つだけにする。切り替えても、どちらの入力も消さない。
+    /// </summary>
+    private void UpdateNamingPanels()
+    {
+        if (SequentialPanel is null || NamingCombo is null) return;
+        var mode = SelectedNamingMode;
+        var date = mode == FileNamingMode.DateTemplate;
+        SaveFolderPanel.Visibility = TemplatePanel.Visibility = date ? Visibility.Visible : Visibility.Collapsed;
+        WorkFolderPanel.Visibility = SequentialPanel.Visibility = date ? Visibility.Collapsed : Visibility.Visible;
+        if (date) return;
+
+        var ext = JpegRadio.IsChecked == true ? ".jpg" : ".png";
+        var withDescription = mode == FileNamingMode.SequentialWithDescription;
+        SequentialPreview.Text = string.Format(Strings.SettingsExampleFormat,
+            SequentialFileName.BaseName(1, withDescription ? Strings.SettingsSequentialExampleDescription : null) + ext);
+        SequentialNote.Text = withDescription ? Strings.SettingsSequentialNoteDescription : "";
+        SequentialNote.Visibility = withDescription ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>コンボボックスの選択肢（表示名は ToString）。</summary>
@@ -135,16 +221,12 @@ public partial class SettingsWindow : Window
         if (QuickStatusText is null || QuickSaveAsCombo is null) return;
         var q = ReadQuickActions();
         var dup = q.Duplicates();
-        if (dup.Count > 0)
-        {
-            QuickStatusText.Text = DescribeDuplicates(dup);
-            QuickStatusText.Foreground = Brushes.Firebrick;
-            return;
-        }
+        // キーの重なりは「詳細」の外に出す（折りたたまない）。
+        QuickErrorText.Text = dup.Count > 0 ? DescribeDuplicates(dup) : "";
+        QuickErrorText.Visibility = dup.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         QuickStatusText.Text = q.Enabled
             ? Strings.SettingsQuickStatusOn
             : Strings.SettingsQuickStatusOff;
-        QuickStatusText.Foreground = Brushes.DimGray;
     }
 
     private static string DescribeDuplicates(IEnumerable<ReleaseKey> keys) =>
@@ -154,6 +236,7 @@ public partial class SettingsWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         _host.HotkeyRegistrationChanged -= OnRegistrationChanged;
+        _host.WorkFolderChanged -= OnWorkFolderChanged;
         Resume();
         base.OnClosed(e);
     }
@@ -215,6 +298,14 @@ public partial class SettingsWindow : Window
         if (dialog.ShowDialog(this) == true) FolderBox.Text = dialog.FolderName;
     }
 
+    private void OnBrowseWorkFolder(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFolderDialog { Title = Strings.WorkFolderSelectTitle };
+        var current = ExpandFolder(WorkFolderBox.Text);
+        if (Directory.Exists(current)) dialog.InitialDirectory = current;
+        if (dialog.ShowDialog(this) == true) WorkFolderBox.Text = dialog.FolderName;
+    }
+
     private void OnTemplateChanged(object sender, TextChangedEventArgs e) => UpdateTemplatePreview();
 
     private void UpdateTemplatePreview()
@@ -236,6 +327,7 @@ public partial class SettingsWindow : Window
     {
         UpdateQualityEnabled();
         UpdateTemplatePreview();
+        UpdateNamingPanels();
     }
 
     private void UpdateQualityEnabled()
@@ -329,10 +421,16 @@ public partial class SettingsWindow : Window
     private void OnSave(object sender, RoutedEventArgs e)
     {
         var errors = new List<string>();
+        var namingMode = SelectedNamingMode;
         var templateError = FileNameTemplate.Validate(TemplateBox.Text);
-        if (templateError is not null) errors.Add(string.Format(Strings.SettingsErrorFileNameFormat, templateError));
+        // テンプレートの欄を表示している（日時・テンプレート）ときだけ誤りにする。連番では、誤った入力は保存せず前の値を残す。
+        if (templateError is not null && namingMode == FileNamingMode.DateTemplate)
+            errors.Add(string.Format(Strings.SettingsErrorFileNameFormat, templateError));
         var folder = FolderBox.Text.Trim();
         if (folder.Length > 0 && folder.IndexOfAny(Path.GetInvalidPathChars()) >= 0) errors.Add(Strings.SettingsErrorFolderInvalid);
+        // 連番の保存先は書き換えた場合だけ渡す（空欄は未指定＝保存フォルダを使う）。
+        var workFolder = _workFolderEdited ? WorkFolderBox.Text.Trim() : null;
+        if (workFolder is { Length: > 0 } && workFolder.IndexOfAny(Path.GetInvalidPathChars()) >= 0) errors.Add(Strings.SettingsErrorWorkFolderInvalid);
         var sc = HotkeyBox.Shortcut;
         if (!sc.IsEmpty && sc.Validate() != ShortcutValidation.Ok) errors.Add(string.Format(Strings.SettingsErrorShortcutFormat, Shortcut.Describe(sc.Validate())));
         var quick = ReadQuickActions();
@@ -344,7 +442,8 @@ public partial class SettingsWindow : Window
         }
 
         _draft.SaveFolder = folder;
-        _draft.FileNameTemplate = TemplateBox.Text.Trim();
+        _draft.NamingMode = namingMode;
+        if (templateError is null) _draft.FileNameTemplate = TemplateBox.Text.Trim();
         _draft.ImageFormat = JpegRadio.IsChecked == true ? ImageFormatKind.Jpeg : ImageFormatKind.Png;
         _draft.JpegQuality = (int)QualitySlider.Value;
         _draft.CaptureHotkey = sc.ToString();
@@ -354,7 +453,7 @@ public partial class SettingsWindow : Window
 
         // 入力欄にフォーカスがあると一時解除中なので、先に戻してから登録する。
         Resume();
-        var failures = _host.ApplySettings(_draft.Clone(), AutoStartCheck.IsChecked == true);
+        var failures = _host.ApplySettings(_draft.Clone(), AutoStartCheck.IsChecked == true, workFolder);
         if (failures.Count > 0)
         {
             ShowErrors(failures);

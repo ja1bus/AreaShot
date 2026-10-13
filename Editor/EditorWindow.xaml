@@ -81,9 +81,10 @@
             </WrapPanel>
         </Border>
 
-        <!-- 下部: 出力 -->
-        <Border DockPanel.Dock="Bottom" Background="#FAFAFA" BorderBrush="#DDD" BorderThickness="0,1,0,0" Padding="10,8">
+        <!-- 下部: 保存先（V1.3.0）・出力 -->
+        <Border DockPanel.Dock="Bottom" Background="#FAFAFA" BorderBrush="#DDD" BorderThickness="0,1,0,0" Padding="10,6,10,8">
             <DockPanel>
+                <v:DestinationPanel x:Name="Destination" DockPanel.Dock="Top" Margin="0,0,0,6" />
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button Content="{x:Static l:Strings.EditorCopy}" Padding="14,5" Margin="0,0,6,0" Click="OnCopy" />
                     <Button x:Name="SaveButton" Content="{x:Static l:Strings.EditorSave}" Padding="14,5" Margin="0,0,6,0" Click="OnSave" />

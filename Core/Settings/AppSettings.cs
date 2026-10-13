@@ -13,6 +13,33 @@ public enum ImageFormatKind
     Jpeg,
 }
 
+/// <summary>「保存先に保存」のファイル名の付け方（V1.3.0。仕様書 §12.2）。</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<FileNamingMode>))]
+public enum FileNamingMode
+{
+    /// <summary>日時・テンプレート（従来方式）。設定の保存フォルダに保存する。</summary>
+    DateTemplate,
+    /// <summary>連番（001.png）。作業用フォルダに保存する。</summary>
+    Sequential,
+    /// <summary>連番＋説明（001_説明.png）。保存時に説明を入力し、作業用フォルダに保存する。</summary>
+    SequentialWithDescription,
+}
+
+public static class FileNamingModes
+{
+    /// <summary>設定画面の選択肢の並び。</summary>
+    public static readonly IReadOnlyList<FileNamingMode> All =
+        [FileNamingMode.DateTemplate, FileNamingMode.Sequential, FileNamingMode.SequentialWithDescription];
+
+    /// <summary>画面に出す名前（表示言語の文字列）。</summary>
+    public static string Describe(FileNamingMode mode) => mode switch
+    {
+        FileNamingMode.Sequential => Strings.NamingModeSequential,
+        FileNamingMode.SequentialWithDescription => Strings.NamingModeSequentialDescription,
+        _ => Strings.NamingModeDateTemplate,
+    };
+}
+
 /// <summary>
 /// ユーザー設定（仕様書 §14）。%LocalAppData%\AreaShot\settings.json に保存する。
 /// 「Windows ログイン時の自動起動」はレジストリ（HKCU\...\Run）の状態そのものを正とし、ここには保存しない。
@@ -28,6 +55,15 @@ public sealed class AppSettings
     public string SaveFolder { get; set; } = "";
 
     public string FileNameTemplate { get; set; } = Naming.FileNameTemplate.Default;
+
+    /// <summary>ファイル名の付け方（V1.3.0）。</summary>
+    public FileNamingMode NamingMode { get; set; } = FileNamingMode.DateTemplate;
+
+    /// <summary>
+    /// 作業用フォルダ（V1.3.0）。連番の保存先と「名前を付けて保存」の初期フォルダ。空なら保存フォルダを使う。
+    /// トレイ・キャプチャー後ダイアログ・エディタ・「名前を付けて保存」の成功で変わり、設定画面では変えない。
+    /// </summary>
+    public string WorkFolder { get; set; } = "";
 
     public ImageFormatKind ImageFormat { get; set; } = ImageFormatKind.Png;
 
@@ -56,6 +92,14 @@ public sealed class AppSettings
     /// <summary>実際に使う保存フォルダ（環境変数を展開する）。</summary>
     public string ResolveSaveFolder() =>
         string.IsNullOrWhiteSpace(SaveFolder) ? DefaultSaveFolder : Environment.ExpandEnvironmentVariables(SaveFolder.Trim());
+
+    /// <summary>実際に使う作業用フォルダ（未指定なら保存フォルダ）。</summary>
+    public string ResolveWorkFolder() =>
+        string.IsNullOrWhiteSpace(WorkFolder) ? ResolveSaveFolder() : Environment.ExpandEnvironmentVariables(WorkFolder.Trim());
+
+    /// <summary>「保存先に保存」の保存先。日時・テンプレートは保存フォルダ、連番は作業用フォルダ。</summary>
+    public string ResolveTargetFolder() =>
+        NamingMode == FileNamingMode.DateTemplate ? ResolveSaveFolder() : ResolveWorkFolder();
 
     public static string ExtensionOf(ImageFormatKind format) => format == ImageFormatKind.Jpeg ? ".jpg" : ".png";
 

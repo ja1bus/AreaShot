@@ -12,7 +12,7 @@ This repository contains the source code of the publicly released AreaShot.
 - After capture, a dialog to copy to the clipboard / save to the save folder / save as / open in the image editor / capture again
 - Hold a modifier key while finishing the selection to copy, save or open the editor without the dialog (key assignments can be changed in Settings)
 - Simple editor: lines, rectangles, arrows, text and rectangular mosaic, with undo / redo and non-destructive editing (the original image and annotations are kept separately and combined on output)
-- PNG and JPEG output (JPEG quality is adjustable); file names are generated from a date-time template (e.g. `{yy}{MM}{dd}{HH}{mm}{ss}_capture`)
+- PNG and JPEG output (JPEG quality is adjustable); file names come from a date-time template (e.g. `{yy}{MM}{dd}{HH}{mm}{ss}_capture`), sequential numbers (`001.png`), or sequential numbers with a description entered when saving (`001_Open settings.png`), which keeps images for manuals and guides in the order they were taken
 - Optional start at Windows sign-in
 - English and Japanese UI (follows the Windows display language, or can be fixed in Settings)
 

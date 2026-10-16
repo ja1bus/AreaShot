@@ -42,7 +42,7 @@ This GitHub repository does not distribute executables (binaries).
 
 See the user guide for details.
 
-- User guide: https://www.iwanaga.net/areashot/en/manual/
+- User guide: https://www.ja1bus.com/areashot/en/manual/
 
 ## Building
 
@@ -102,9 +102,9 @@ This software is provided "as is", without warranty of any kind, express or impl
 
 ## Links
 
-- Web page: https://www.iwanaga.net/areashot/en/
-- User guide: https://www.iwanaga.net/areashot/en/manual/
-- Changelog: https://www.iwanaga.net/areashot/en/changelog/
-- Privacy policy: https://www.iwanaga.net/areashot/en/privacy/
+- Web page: https://www.ja1bus.com/areashot/en/
+- User guide: https://www.ja1bus.com/areashot/en/manual/
+- Changelog: https://www.ja1bus.com/areashot/en/changelog/
+- Privacy policy: https://www.ja1bus.com/areashot/en/privacy/
 - Microsoft Store: https://apps.microsoft.com/detail/9PBS7QBWJDD2
-- Contact: support@iwanaga.net
+- Contact: contact@ja1bus.com

@@ -6,9 +6,9 @@ The MIT License in [LICENSE](LICENSE) applies only to the source code and files 
 
 ## Runtime / 実行時
 
-AreaShot uses only .NET 8 and its Windows Desktop shared framework (WPF, Windows Forms, System.Text.Json). They are provided by Microsoft under the MIT License and are not included in this repository. The app downloaded as a folder or installed with the installer uses the .NET 8 Desktop Runtime installed on the PC. The Microsoft Store package includes the .NET runtime.
+AreaShot uses only .NET 10 and its Windows Desktop shared framework (WPF, Windows Forms, System.Text.Json). They are provided by Microsoft under the MIT License and are not included in this repository. The app downloaded as a folder or installed with the installer uses the .NET 10 Desktop Runtime installed on the PC. The Microsoft Store package includes the .NET runtime.
 
-AreaShot が使うのは .NET 8 と Windows Desktop 共有フレームワーク（WPF・Windows Forms・System.Text.Json）だけです。これらは Microsoft が MIT License で提供しているもので、このリポジトリには含まれていません。フォルダー一式やインストーラーで入れたアプリは PC にインストールされている .NET 8 Desktop Runtime を使います。Microsoft Store のパッケージには .NET のランタイムを含めています。
+AreaShot が使うのは .NET 10 と Windows Desktop 共有フレームワーク（WPF・Windows Forms・System.Text.Json）だけです。これらは Microsoft が MIT License で提供しているもので、このリポジトリには含まれていません。フォルダー一式やインストーラーで入れたアプリは PC にインストールされている .NET 10 Desktop Runtime を使います。Microsoft Store のパッケージには .NET のランタイムを含めています。
 
 - .NET: https://github.com/dotnet/runtime (MIT)
 - WPF: https://github.com/dotnet/wpf (MIT)

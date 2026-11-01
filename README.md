@@ -43,6 +43,7 @@ AreaShot は、Windows 11 向けの軽量なスクリーンショットツール
 詳しい使い方は取扱説明書をご覧ください。
 
 - 取扱説明書: https://www.ja1bus.com/areashot/manual/
+- 使い方の動画（YouTube・全 3 本。音声なし・字幕付き）: https://www.ja1bus.com/areashot/videos/
 
 ## ビルド方法
 
@@ -104,6 +105,7 @@ Copyright (c) 2026 ja1bus（© ja1bus）
 
 - Web ページ: https://www.ja1bus.com/areashot/
 - 取扱説明書: https://www.ja1bus.com/areashot/manual/
+- 使い方の動画（YouTube・全 3 本。音声なし・字幕付き）: https://www.ja1bus.com/areashot/videos/
 - 更新履歴: https://www.ja1bus.com/areashot/changelog/
 - プライバシーポリシー: https://www.ja1bus.com/areashot/privacy/
 - Microsoft Store: https://apps.microsoft.com/detail/9PBS7QBWJDD2

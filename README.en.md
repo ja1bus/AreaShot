@@ -43,6 +43,7 @@ This GitHub repository does not distribute executables (binaries).
 See the user guide for details.
 
 - User guide: https://www.ja1bus.com/areashot/en/manual/
+- How-to videos (YouTube, 3 videos, no audio, with captions): https://www.ja1bus.com/areashot/en/videos/
 
 ## Building
 
@@ -104,6 +105,7 @@ This software is provided "as is", without warranty of any kind, express or impl
 
 - Web page: https://www.ja1bus.com/areashot/en/
 - User guide: https://www.ja1bus.com/areashot/en/manual/
+- How-to videos (YouTube, 3 videos, no audio, with captions): https://www.ja1bus.com/areashot/en/videos/
 - Changelog: https://www.ja1bus.com/areashot/en/changelog/
 - Privacy policy: https://www.ja1bus.com/areashot/en/privacy/
 - Microsoft Store: https://apps.microsoft.com/detail/9PBS7QBWJDD2

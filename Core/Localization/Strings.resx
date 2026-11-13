@@ -337,7 +337,7 @@ Restart AreaShot now?</value>
     <value>Shortcut</value>
   </data>
   <data name="SettingsResetDefault" xml:space="preserve">
-    <value>Reset to default</value>
+    <value>Reset to defaults</value>
   </data>
   <data name="SettingsGroupQuick" xml:space="preserve">
     <value>After selecting an area</value>
@@ -349,7 +349,7 @@ Restart AreaShot now?</value>
     <value>Show the key hints on the area selection screen</value>
   </data>
   <data name="SettingsQuickStatusOn" xml:space="preserve">
-    <value>The action runs according to the key you hold while releasing the mouse. If you release without holding a key, the dialog appears as usual.</value>
+    <value>If you release the mouse without holding a key, the dialog appears.</value>
   </data>
   <data name="SettingsQuickStatusOff" xml:space="preserve">
     <value>The dialog always appears when you release the mouse.</value>

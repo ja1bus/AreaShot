@@ -67,7 +67,7 @@
 今すぐ再起動しますか？</value>
   </data>
   <data name="RestartPromptOpenWindows" xml:space="preserve">
-    <value>開いているキャプチャー画面とイメージエディタは閉じられ、保存していない画像は失われます。</value>
+    <value>開いているキャプチャー画面とイメージエディターは閉じられ、保存していない画像は失われます。</value>
   </data>
   <data name="RestartFailed" xml:space="preserve">
     <value>AreaShot を再起動できませんでした。終了してから起動し直してください。</value>
@@ -112,7 +112,7 @@
     <value>クリップボードにコピー</value>
   </data>
   <data name="QuickActionEdit" xml:space="preserve">
-    <value>イメージエディタで開く</value>
+    <value>イメージエディターで開く</value>
   </data>
   <data name="QuickActionSave" xml:space="preserve">
     <value>保存先に保存</value>
@@ -124,7 +124,7 @@
     <value>コピー</value>
   </data>
   <data name="QuickShortEdit" xml:space="preserve">
-    <value>エディタ</value>
+    <value>エディター</value>
   </data>
   <data name="QuickShortSave" xml:space="preserve">
     <value>保存</value>
@@ -208,7 +208,7 @@
     <value>クリップボードにコピー(_C)</value>
   </data>
   <data name="ResultEdit" xml:space="preserve">
-    <value>イメージエディタで開く(_E)</value>
+    <value>イメージエディターで開く(_E)</value>
   </data>
   <data name="ResultSave" xml:space="preserve">
     <value>保存先に保存(_S)</value>
@@ -220,7 +220,7 @@
     <value>もう一度キャプチャーする(_R)</value>
   </data>
   <data name="EditorTitle" xml:space="preserve">
-    <value>AreaShot - イメージエディタ</value>
+    <value>AreaShot - イメージエディター</value>
   </data>
   <data name="ToolSelect" xml:space="preserve">
     <value>選択</value>
@@ -259,13 +259,13 @@
     <value>文字サイズ</value>
   </data>
   <data name="EditorUndo" xml:space="preserve">
-    <value>Undo</value>
+    <value>元に戻す</value>
   </data>
   <data name="EditorUndoTip" xml:space="preserve">
     <value>元に戻す (Ctrl+Z)</value>
   </data>
   <data name="EditorRedo" xml:space="preserve">
-    <value>Redo</value>
+    <value>やり直し</value>
   </data>
   <data name="EditorRedoTip" xml:space="preserve">
     <value>やり直し (Ctrl+Y)</value>
@@ -277,10 +277,10 @@
     <value>選択したオブジェクトを削除 (Delete)</value>
   </data>
   <data name="EditorClearAll" xml:space="preserve">
-    <value>全て削除</value>
+    <value>すべて削除</value>
   </data>
   <data name="EditorClearAllTip" xml:space="preserve">
-    <value>すべての編集を削除（Undo で復元できます）</value>
+    <value>すべての編集を削除（元に戻せます）</value>
   </data>
   <data name="EditorZoom" xml:space="preserve">
     <value>表示</value>
@@ -316,7 +316,7 @@
     <value>保存</value>
   </data>
   <data name="SettingsSaveFolder" xml:space="preserve">
-    <value>保存フォルダ</value>
+    <value>保存フォルダー</value>
   </data>
   <data name="SettingsBrowse" xml:space="preserve">
     <value>参照...</value>
@@ -337,7 +337,7 @@
     <value>ショートカット</value>
   </data>
   <data name="SettingsResetDefault" xml:space="preserve">
-    <value>既定に戻す</value>
+    <value>既定値に戻す</value>
   </data>
   <data name="SettingsGroupQuick" xml:space="preserve">
     <value>範囲選択の後の操作</value>
@@ -349,7 +349,7 @@
     <value>範囲選択の画面にキーの案内を表示する</value>
   </data>
   <data name="SettingsQuickStatusOn" xml:space="preserve">
-    <value>範囲を選んでマウスを離すときに押していたキーで実行します。キーを押さずに離すと、これまでどおりダイアログを出します。</value>
+    <value>キーを押さずに離すと、ダイアログを出します。</value>
   </data>
   <data name="SettingsQuickStatusOff" xml:space="preserve">
     <value>マウスを離すと、いつもダイアログを出します。</value>
@@ -367,7 +367,7 @@
     <value>その他</value>
   </data>
   <data name="SettingsAutoStart" xml:space="preserve">
-    <value>Windows ログイン時に自動起動する</value>
+    <value>Windows へのサインイン時に起動する</value>
   </data>
   <data name="SettingsNotify" xml:space="preserve">
     <value>保存したとき・キーを押しながらコピーしたときに通知を表示する</value>
@@ -435,7 +435,7 @@
 {1}</value>
   </data>
   <data name="AutoStartDisabledByUser" xml:space="preserve">
-    <value>［スタートアップ アプリ］（設定またはタスク マネージャー）で無効になっています。そこで AreaShot を有効にしてください。</value>
+    <value>Windows の［スタートアップ アプリ］で AreaShot がオフになっています。そこでオンにしてください。</value>
   </data>
   <data name="AutoStartDisabledByPolicy" xml:space="preserve">
     <value>組織のポリシーで管理されているため変更できません。</value>
@@ -450,7 +450,7 @@
     <value>登録失敗: {0}</value>
   </data>
   <data name="SettingsSelectFolderTitle" xml:space="preserve">
-    <value>保存フォルダを選択</value>
+    <value>保存フォルダーを選択</value>
   </data>
   <data name="SettingsExampleFormat" xml:space="preserve">
     <value>保存例: {0}</value>
@@ -459,7 +459,7 @@
     <value>ファイル名: {0}</value>
   </data>
   <data name="SettingsErrorFolderInvalid" xml:space="preserve">
-    <value>保存フォルダ: パスに使えない文字が含まれています。</value>
+    <value>保存フォルダー: パスに使えない文字が含まれています。</value>
   </data>
   <data name="SettingsErrorShortcutFormat" xml:space="preserve">
     <value>ショートカット: {0}</value>
@@ -474,7 +474,7 @@
     <value>（未割当）</value>
   </data>
   <data name="ToastOpenFolder" xml:space="preserve">
-    <value>クリックでフォルダを開く</value>
+    <value>クリックでフォルダーを開く</value>
   </data>
   <data name="ToastSavedTitle" xml:space="preserve">
     <value>保存しました</value>
@@ -497,7 +497,7 @@
 
 保存先: {1}
 
-設定画面で保存フォルダを確認するか、「名前を付けて保存」をお使いください。</value>
+設定画面で保存フォルダーを確認するか、「名前を付けて保存」をお使いください。</value>
   </data>
   <data name="OutputSaveAsFailedFormat" xml:space="preserve">
     <value>保存できませんでした。
@@ -521,7 +521,7 @@
     <value>書き込む権限がありません。</value>
   </data>
   <data name="ErrorFolderNotFound" xml:space="preserve">
-    <value>保存先のフォルダが見つかりません。</value>
+    <value>保存先のフォルダーが見つかりません。</value>
   </data>
   <data name="ErrorPathTooLong" xml:space="preserve">
     <value>パスが長すぎます。</value>
@@ -536,15 +536,15 @@
     <value>実行ファイルの場所を取得できませんでした。</value>
   </data>
   <data name="SequentialNumberExhaustedFormat" xml:space="preserve">
-    <value>連番が上限（{0}）に達したため保存できません。連番の保存先を別のフォルダにしてください。</value>
+    <value>連番が上限（{0}）に達したため保存できません。連番の保存先を別のフォルダーにしてください。</value>
   </data>
   <data name="SequentialNameTooLong" xml:space="preserve">
-    <value>ファイル名またはパスが長すぎます。説明を短くするか、パスの短いフォルダを連番の保存先にしてください。</value>
+    <value>ファイル名またはパスが長すぎます。説明を短くするか、パスの短いフォルダーを連番の保存先にしてください。</value>
   </data>
   <data name="SequentialNumberingFailedFormat" xml:space="preserve">
-    <value>フォルダの中を読めないため、連番を決められませんでした。
+    <value>フォルダーの中を読めないため、連番を決められませんでした。
 {0}
-フォルダ: {1}</value>
+フォルダー: {1}</value>
   </data>
   <data name="NamingModeDateTemplate" xml:space="preserve">
     <value>ファイル名テンプレート</value>
@@ -577,10 +577,10 @@
     <value>詳細</value>
   </data>
   <data name="DestinationChange" xml:space="preserve">
-    <value>フォルダ変更</value>
+    <value>フォルダー変更</value>
   </data>
   <data name="DestinationChangeTip" xml:space="preserve">
-    <value>連番の保存先を変更します。「名前を付けて保存」でも最初にこのフォルダを開きます。</value>
+    <value>連番の保存先を変更します。「名前を付けて保存」でも最初にこのフォルダーを開きます。</value>
   </data>
   <data name="DestinationMissingSuffix" xml:space="preserve">
     <value>（見つかりません）</value>
@@ -592,12 +592,12 @@
     <value>連番の保存先を選択</value>
   </data>
   <data name="WorkFolderSaveFailedFormat" xml:space="preserve">
-    <value>連番の保存先の設定を保存できませんでした。AreaShot を終了するまでは、変更後のフォルダを使います。
+    <value>連番の保存先の設定を保存できませんでした。AreaShot を終了するまでは、変更後のフォルダーを使います。
 {0}</value>
   </data>
   <data name="WorkFolderSaveFailedAfterImageFormat" xml:space="preserve">
     <value>画像は保存しました。
-ただし、連番の保存先の設定を保存できませんでした。AreaShot を終了するまでは、変更後のフォルダを使います。
+ただし、連番の保存先の設定を保存できませんでした。AreaShot を終了するまでは、変更後のフォルダーを使います。
 {0}</value>
   </data>
   <data name="DescriptionTitle" xml:space="preserve">

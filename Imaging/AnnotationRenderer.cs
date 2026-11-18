@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
 using AreaShot.Core.Annotations;
@@ -11,9 +12,12 @@ namespace AreaShot.Imaging;
 /// </summary>
 public static class AnnotationRenderer
 {
+    /// <summary>番号バッジの番号のフォント（固定。無ければ §10.5 の代替）。</summary>
+    public const string BadgeFontFamily = "Segoe UI";
+
     /// <summary>
     /// <paramref name="annotations"/> を描画順（モザイクが下）に描く。<paramref name="skip"/> の Id は描かない（文字の編集中など）。
-    /// 画像の外にはみ出した部分は切り取る。
+    /// 画像の外にはみ出した部分は切り取る。トリミングは描かない（表示はエディター、出力は切り出し）。
     /// </summary>
     public static void DrawAll(DrawingContext dc, IEnumerable<Annotation> annotations, MosaicCache mosaics, int imageWidth, int imageHeight, Guid? skip = null)
     {
@@ -40,7 +44,14 @@ public static class AnnotationRenderer
                 DrawLine(dc, l);
                 break;
             case TextAnnotation t:
-                dc.DrawText(TextLayout.Create(t), new Point(t.Position.X, t.Position.Y));
+                DrawText(dc, t);
+                break;
+            case BadgeAnnotation b:
+                DrawBadge(dc, b);
+                break;
+            case HighlightAnnotation h:
+                if (h.Bounds.Width > 0 && h.Bounds.Height > 0)
+                    dc.DrawRectangle(BrushCache.Get(h.FillColor), null, new Rect(h.Bounds.X, h.Bounds.Y, h.Bounds.Width, h.Bounds.Height));
                 break;
             case MosaicAnnotation m:
                 var entry = mosaics.Get(m.Id, m.Bounds);
@@ -94,6 +105,37 @@ public static class AnnotationRenderer
         var pen = new Pen(brush, l.StrokeWidth) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
         pen.Freeze();
         dc.DrawLine(pen, ToPoint(l.Start), ToPoint(l.End));
+    }
+
+    /// <summary>文字。縁取りがあれば輪郭を太いペンで先に描き、その上に本体を描く（V1.4.0）。</summary>
+    private static void DrawText(DrawingContext dc, TextAnnotation t)
+    {
+        var ft = TextLayout.Create(t);
+        var origin = new Point(t.Position.X, t.Position.Y);
+        if (t.Outline)
+        {
+            var thickness = TextOutlineStyle.Thickness(t.FontSize);
+            // 線は輪郭の両側に出るため、外側に thickness だけ出るよう 2 倍の太さで描く。
+            var pen = new Pen(BrushCache.Get(TextOutlineStyle.ColorFor(t.Color)), thickness * 2) { LineJoin = PenLineJoin.Round };
+            pen.Freeze();
+            var geometry = ft.BuildGeometry(origin);
+            geometry.Freeze();
+            dc.DrawGeometry(null, pen, geometry);
+        }
+        dc.DrawText(ft, origin);
+    }
+
+    /// <summary>番号バッジ。塗りつぶした円の中心に白の太字の番号を置く（V1.4.0）。</summary>
+    private static void DrawBadge(DrawingContext dc, BadgeAnnotation b)
+    {
+        var r = BadgeGeometry.Radius(b.FontSize);
+        if (!(r > 0)) return;
+        var center = ToPoint(b.Center);
+        dc.DrawEllipse(BrushCache.Get(b.Color), null, center, r, r);
+        var typeface = new Typeface(FontCatalog.GetFamily(BadgeFontFamily), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
+        var ft = new FormattedText(b.Number.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture,
+            FlowDirection.LeftToRight, typeface, Math.Max(1, b.FontSize), Brushes.White, pixelsPerDip: 1.0);
+        dc.DrawText(ft, new Point(center.X - ft.Width / 2, center.Y - ft.Height / 2));
     }
 
     private static Point ToPoint(PointD p) => new(p.X, p.Y);

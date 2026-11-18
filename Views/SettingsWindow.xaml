@@ -118,6 +118,8 @@
                         <Grid.RowDefinitions>
                             <RowDefinition />
                             <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
                         <TextBlock Text="{x:Static l:Strings.SettingsShortcut}" VerticalAlignment="Center" Margin="0,0,10,0" />
                         <StackPanel Grid.Column="1" Orientation="Horizontal">
@@ -125,6 +127,13 @@
                             <Button Content="{x:Static l:Strings.SettingsResetDefault}" Margin="8,0,0,0" Padding="8,0" Click="OnResetHotkey" />
                         </StackPanel>
                         <TextBlock x:Name="HotkeyStatusText" Grid.Row="1" Grid.Column="1" Margin="0,4,0,0" TextWrapping="Wrap" />
+                        <!-- 前回と同じ範囲でキャプチャー（V1.4.0） -->
+                        <TextBlock Grid.Row="2" Text="{x:Static l:Strings.SettingsRepeatShortcut}" VerticalAlignment="Center" Margin="0,8,10,0" />
+                        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,8,0,0">
+                            <v:ShortcutBox x:Name="RepeatHotkeyBox" Width="220" Height="26" />
+                            <Button Content="{x:Static l:Strings.SettingsResetDefault}" Margin="8,0,0,0" Padding="8,0" Click="OnResetRepeatHotkey" />
+                        </StackPanel>
+                        <TextBlock x:Name="RepeatHotkeyStatusText" Grid.Row="3" Grid.Column="1" Margin="0,4,0,0" TextWrapping="Wrap" />
                     </Grid>
                 </GroupBox>
 

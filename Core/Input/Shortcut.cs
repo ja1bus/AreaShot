@@ -31,6 +31,9 @@ public readonly record struct Shortcut(KeyModifiers Modifiers, int Key)
     /// <summary>既定のキャプチャー開始ショートカット（仕様書 §4）。</summary>
     public static readonly Shortcut DefaultCapture = new(KeyModifiers.Control | KeyModifiers.Alt, 'S');
 
+    /// <summary>既定の「前回と同じ範囲でキャプチャー」のショートカット（V1.4.0。仕様書 §4）。</summary>
+    public static readonly Shortcut DefaultRepeatCapture = new(KeyModifiers.Control | KeyModifiers.Alt, 'R');
+
     public bool IsEmpty => Key == 0;
 
     public static bool TryParse(string? text, out Shortcut shortcut)

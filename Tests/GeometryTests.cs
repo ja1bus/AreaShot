@@ -337,7 +337,8 @@ public class AnnotationOpsTests
         Assert.Equal(new StyleSupport(true, true, false, false), StyleSupport.For(AnnotationKind.Rectangle));
         Assert.Equal(new StyleSupport(true, true, false, false), StyleSupport.For(AnnotationKind.Arrow));
         Assert.Equal(new StyleSupport(true, true, false, false), StyleSupport.For(AnnotationKind.Line));
-        Assert.Equal(new StyleSupport(true, false, true, true), StyleSupport.For(AnnotationKind.Text));
+        // V1.4.0: 文字は縁取りも変えられる（仕様書 §24.9 D6）。
+        Assert.Equal(new StyleSupport(true, false, true, true, Outline: true), StyleSupport.For(AnnotationKind.Text));
         Assert.Equal(StyleSupport.None, StyleSupport.For(AnnotationKind.Mosaic));
         Assert.Equal(StyleSupport.None, StyleSupport.For(null));
     }

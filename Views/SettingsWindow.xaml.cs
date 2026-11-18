@@ -16,7 +16,10 @@ namespace AreaShot.Views;
 public interface ISettingsHost
 {
     AppSettings Settings { get; }
-    HotkeyRegistration HotkeyRegistration { get; }
+
+    /// <summary>グローバルショートカットの登録状態（V1.4.0 で 2 本）。</summary>
+    HotkeyRegistration Hotkey(HotkeyKind kind);
+
     event EventHandler? HotkeyRegistrationChanged;
 
     /// <summary>作業用フォルダ（連番の保存先）が変わった（設定画面を開いている間に別の画面で変えた場合。V1.3.0）。</summary>
@@ -76,6 +79,8 @@ public partial class SettingsWindow : Window
         QualitySlider.Value = _draft.JpegQuality;
         Shortcut.TryParse(_draft.CaptureHotkey, out var sc);
         HotkeyBox.Shortcut = sc;
+        Shortcut.TryParse(_draft.RepeatCaptureHotkey, out var repeatSc);
+        RepeatHotkeyBox.Shortcut = repeatSc;
         AutoStartCheck.IsChecked = AutoStartService.IsEnabled();
         NotifyCheck.IsChecked = _draft.ShowSaveNotification;
         var quick = _draft.QuickActions;
@@ -90,13 +95,17 @@ public partial class SettingsWindow : Window
         LanguageCombo.ItemsSource = UiLanguage.All.Select(v => new LanguageChoice(v)).ToList();
         LanguageCombo.SelectedIndex = Math.Max(0, UiLanguage.All.ToList().IndexOf(UiLanguage.Normalize(_draft.Language)));
         // csproj の <Version>（例: 1.0.2）。どの版が動いているかを利用者が確認できるようにする。
-        VersionRun.Text =string.Format(Strings.SettingsVersionFormat, typeof(SettingsWindow).Assembly.GetName().Version?.ToString(3));
+        VersionRun.Text = string.Format(Strings.SettingsVersionFormat, typeof(SettingsWindow).Assembly.GetName().Version?.ToString(3));
         ManualLink.ToolTip = AppLinks.Manual(System.Globalization.CultureInfo.CurrentUICulture);
         SourceLink.ToolTip = AppLinks.Repository;
 
-        HotkeyBox.CaptureStarted += (_, _) => Suspend();
-        HotkeyBox.CaptureEnded += (_, _) => Resume();
-        HotkeyBox.ShortcutChanged += (_, _) => ShowHotkeyStatus();
+        // どちらの入力欄にフォーカスがあっても、登録中のショートカットを全件まとめて一時解除する。
+        foreach (var box in new[] { HotkeyBox, RepeatHotkeyBox })
+        {
+            box.CaptureStarted += (_, _) => Suspend();
+            box.CaptureEnded += (_, _) => Resume();
+            box.ShortcutChanged += (_, _) => ShowHotkeyStatus();
+        }
         _host.HotkeyRegistrationChanged += OnRegistrationChanged;
         _host.WorkFolderChanged += OnWorkFolderChanged;
 
@@ -257,17 +266,31 @@ public partial class SettingsWindow : Window
 
     private void OnRegistrationChanged(object? sender, EventArgs e) => ShowHotkeyStatus();
 
-    /// <summary>ショートカットの状態表示。入力中の値が登録中の値と違う場合は「保存で登録」と表示する。</summary>
+    /// <summary>2 本のショートカットの状態表示（V1.4.0）。</summary>
     private void ShowHotkeyStatus()
     {
-        var input = HotkeyBox.Shortcut;
-        var reg = _host.HotkeyRegistration;
+        ShowHotkeyStatus(HotkeyBox, _host.Hotkey(HotkeyKind.Capture), HotkeyStatusText, duplicate: false);
+        ShowHotkeyStatus(RepeatHotkeyBox, _host.Hotkey(HotkeyKind.RepeatCapture), RepeatHotkeyStatusText, duplicate: IsDuplicateHotkey());
+    }
+
+    /// <summary>2 つの入力が同じ組み合わせ（空は除く）。</summary>
+    private bool IsDuplicateHotkey() => !HotkeyBox.Shortcut.IsEmpty && HotkeyBox.Shortcut == RepeatHotkeyBox.Shortcut;
+
+    /// <summary>ショートカットの状態表示。入力中の値が登録中の値と違う場合は「保存で登録」と表示する。</summary>
+    private static void ShowHotkeyStatus(ShortcutBox box, HotkeyRegistration reg, TextBlock target, bool duplicate)
+    {
+        var input = box.Shortcut;
         string text;
         Brush color;
         var validation = input.IsEmpty ? ShortcutValidation.Ok : input.Validate();
         if (validation != ShortcutValidation.Ok)
         {
             text = Shortcut.Describe(validation);
+            color = Brushes.Firebrick;
+        }
+        else if (duplicate)
+        {
+            text = Strings.SettingsHotkeyDuplicate;
             color = Brushes.Firebrick;
         }
         else if (input != reg.Shortcut)
@@ -285,9 +308,9 @@ public partial class SettingsWindow : Window
                 _ => Brushes.DimGray,
             };
         }
-        HotkeyStatusText.Text = text;
-        HotkeyStatusText.Foreground = color;
-        HotkeyStatusText.FontWeight = color == Brushes.Firebrick ? FontWeights.SemiBold : FontWeights.Normal;
+        target.Text = text;
+        target.Foreground = color;
+        target.FontWeight = color == Brushes.Firebrick ? FontWeights.SemiBold : FontWeights.Normal;
     }
 
     private void OnBrowse(object sender, RoutedEventArgs e)
@@ -344,6 +367,8 @@ public partial class SettingsWindow : Window
     }
 
     private void OnResetHotkey(object sender, RoutedEventArgs e) => HotkeyBox.Shortcut = Shortcut.DefaultCapture;
+
+    private void OnResetRepeatHotkey(object sender, RoutedEventArgs e) => RepeatHotkeyBox.Shortcut = Shortcut.DefaultRepeatCapture;
 
     /// <summary>取扱説明書（Web）を既定のブラウザーで開く。開けなければ URL を見せる（設定画面は閉じない）。</summary>
     private void OnOpenManual(object sender, RoutedEventArgs e)
@@ -426,13 +451,29 @@ public partial class SettingsWindow : Window
         // テンプレートの欄を表示している（日時・テンプレート）ときだけ誤りにする。連番では、誤った入力は保存せず前の値を残す。
         if (templateError is not null && namingMode == FileNamingMode.DateTemplate)
             errors.Add(string.Format(Strings.SettingsErrorFileNameFormat, templateError));
+        var dateMode = namingMode == FileNamingMode.DateTemplate;
         var folder = FolderBox.Text.Trim();
-        if (folder.Length > 0 && folder.IndexOfAny(Path.GetInvalidPathChars()) >= 0) errors.Add(Strings.SettingsErrorFolderInvalid);
+        // 見えている欄だけを誤りにする（V1.4.0）。見えていない欄が誤っていれば、エラーにせず保存済みの値を残す（テンプレートと同じ）。
+        var folderError = FolderError(folder, Strings.SettingsErrorFolderInvalid, Strings.SettingsErrorFolderNotFull);
+        if (folderError is not null)
+        {
+            if (dateMode) errors.Add(folderError);
+            else folder = _draft.SaveFolder;
+        }
         // 連番の保存先は書き換えた場合だけ渡す（空欄は未指定＝保存フォルダを使う）。
         var workFolder = _workFolderEdited ? WorkFolderBox.Text.Trim() : null;
-        if (workFolder is { Length: > 0 } && workFolder.IndexOfAny(Path.GetInvalidPathChars()) >= 0) errors.Add(Strings.SettingsErrorWorkFolderInvalid);
+        if (FolderError(workFolder, Strings.SettingsErrorWorkFolderInvalid, Strings.SettingsErrorWorkFolderNotFull) is { } workError)
+        {
+            if (!dateMode) errors.Add(workError);
+            else workFolder = null;
+        }
         var sc = HotkeyBox.Shortcut;
         if (!sc.IsEmpty && sc.Validate() != ShortcutValidation.Ok) errors.Add(string.Format(Strings.SettingsErrorShortcutFormat, Shortcut.Describe(sc.Validate())));
+        var repeatSc = RepeatHotkeyBox.Shortcut;
+        if (!repeatSc.IsEmpty && repeatSc.Validate() != ShortcutValidation.Ok)
+            errors.Add(string.Format(Strings.SettingsErrorRepeatShortcutFormat, Shortcut.Describe(repeatSc.Validate())));
+        else if (IsDuplicateHotkey())
+            errors.Add(string.Format(Strings.SettingsErrorRepeatShortcutFormat, Strings.SettingsHotkeyDuplicate));
         var quick = ReadQuickActions();
         if (quick.Duplicates() is { Count: > 0 } dup) errors.Add(string.Format(Strings.SettingsErrorQuickFormat, DescribeDuplicates(dup)));
         if (errors.Count > 0)
@@ -447,6 +488,7 @@ public partial class SettingsWindow : Window
         _draft.ImageFormat = JpegRadio.IsChecked == true ? ImageFormatKind.Jpeg : ImageFormatKind.Png;
         _draft.JpegQuality = (int)QualitySlider.Value;
         _draft.CaptureHotkey = sc.ToString();
+        _draft.RepeatCaptureHotkey = repeatSc.ToString();
         _draft.ShowSaveNotification = NotifyCheck.IsChecked == true;
         _draft.QuickActions = quick;
         _draft.Language = (LanguageCombo.SelectedItem as LanguageChoice)?.Value ?? UiLanguage.System;
@@ -474,6 +516,17 @@ public partial class SettingsWindow : Window
         if (e.Key != System.Windows.Input.Key.Escape) return;
         e.Handled = true;
         Close();
+    }
+
+    /// <summary>
+    /// フォルダーの入力の誤り（使えない文字、または環境変数を展開した後に完全なパスでない。V1.4.0）。空・null は誤りでない。
+    /// </summary>
+    public static string? FolderError(string? text, string invalidMessage, string notFullMessage)
+    {
+        if (string.IsNullOrEmpty(text)) return null;
+        if (text.IndexOfAny(Path.GetInvalidPathChars()) >= 0) return invalidMessage;
+        var expanded = Environment.ExpandEnvironmentVariables(text);
+        return expanded.IndexOfAny(Path.GetInvalidPathChars()) >= 0 || !Path.IsPathFullyQualified(expanded) ? notFullMessage : null;
     }
 
     private void ShowErrors(IEnumerable<string> errors)

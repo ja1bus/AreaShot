@@ -16,6 +16,15 @@ public enum HotkeyStatus
     Suspended,
 }
 
+/// <summary>グローバルショートカットの種類（V1.4.0）。値は RegisterHotKey の id に使う。</summary>
+public enum HotkeyKind
+{
+    /// <summary>キャプチャー開始。</summary>
+    Capture = 1,
+    /// <summary>前回と同じ範囲でキャプチャー。</summary>
+    RepeatCapture = 2,
+}
+
 public sealed record HotkeyRegistration(Shortcut Shortcut, HotkeyStatus Status, int ErrorCode = 0)
 {
     public static readonly HotkeyRegistration Unassigned = new(Shortcut.None, HotkeyStatus.Unassigned);
@@ -31,16 +40,18 @@ public sealed record HotkeyRegistration(Shortcut Shortcut, HotkeyStatus Status, 
 }
 
 /// <summary>
-/// Win32 RegisterHotKey によるキャプチャー開始のグローバルショートカット（仕様書 §4）。
+/// Win32 RegisterHotKey によるグローバルショートカット（仕様書 §4）。キャプチャー開始と前回と同じ範囲（V1.4.0）の 2 本を Id ごとに扱う。
 /// メッセージ専用ウィンドウで WM_HOTKEY を受ける（ポーリングしない）。
+/// 登録し直すときは「全件を解除 → 全件を登録」の順にする（2 本を入れ替えても、まだ相手が使っている組み合わせで失敗しないように）。
 /// </summary>
 public sealed class GlobalHotkeyService : IDisposable
 {
-    private const int HotkeyId = 1;
+    public static readonly IReadOnlyList<HotkeyKind> Kinds = [HotkeyKind.Capture, HotkeyKind.RepeatCapture];
 
     private readonly HwndSource _source;
-    private Shortcut _shortcut;
-    private bool _registered;
+    private readonly Dictionary<HotkeyKind, Shortcut> _shortcuts = [];
+    private readonly HashSet<HotkeyKind> _registered = [];
+    private readonly Dictionary<HotkeyKind, HotkeyRegistration> _current = [];
     private int _suspendCount;
 
     public GlobalHotkeyService()
@@ -51,81 +62,104 @@ public sealed class GlobalHotkeyService : IDisposable
     }
 
     /// <summary>ショートカットが押された（UI スレッド）。</summary>
-    public event EventHandler? Pressed;
+    public event Action<HotkeyKind>? Pressed;
 
     /// <summary>登録状態が変わった。</summary>
     public event EventHandler? StatusChanged;
 
-    public HotkeyRegistration Current { get; private set; } = HotkeyRegistration.Unassigned;
+    /// <summary>メッセージを受けるウィンドウ（試験用）。</summary>
+    public IntPtr Handle => _source.Handle;
 
-    /// <summary>ショートカットを差し替えて登録し直す。</summary>
-    public HotkeyRegistration Apply(Shortcut shortcut)
+    public HotkeyRegistration Get(HotkeyKind kind) =>
+        _current.TryGetValue(kind, out var r) ? r : HotkeyRegistration.Unassigned;
+
+    /// <summary>2 本のショートカットを差し替えて登録し直す（全件を解除してから全件を登録する）。</summary>
+    public void ApplyAll(Shortcut capture, Shortcut repeat)
     {
-        _shortcut = shortcut;
+        _shortcuts[HotkeyKind.Capture] = capture;
+        _shortcuts[HotkeyKind.RepeatCapture] = repeat;
         if (_suspendCount > 0)
         {
-            SetCurrent(shortcut.IsEmpty ? HotkeyRegistration.Unassigned : new HotkeyRegistration(shortcut, HotkeyStatus.Suspended));
-            return Current;
+            foreach (var kind in Kinds) SetSuspendedState(kind);
+            StatusChanged?.Invoke(this, EventArgs.Empty);
+            return;
         }
-        Register();
-        return Current;
+        RegisterAll();
     }
 
     /// <summary>一時的に解除する（設定画面のショートカット入力中）。<see cref="Resume"/> と対で呼ぶ。</summary>
     public void Suspend()
     {
         if (_suspendCount++ > 0) return;
-        Unregister();
-        if (!_shortcut.IsEmpty) SetCurrent(new HotkeyRegistration(_shortcut, HotkeyStatus.Suspended));
+        UnregisterAll();
+        foreach (var kind in Kinds) SetSuspendedState(kind);
+        StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public void Resume()
     {
         if (_suspendCount == 0 || --_suspendCount > 0) return;
-        Register();
+        RegisterAll();
     }
 
     public void Dispose()
     {
-        Unregister();
+        UnregisterAll();
         _source.RemoveHook(WndProc);
         _source.Dispose();
     }
 
-    private void Register()
+    private Shortcut ShortcutOf(HotkeyKind kind) => _shortcuts.TryGetValue(kind, out var s) ? s : Shortcut.None;
+
+    private void SetSuspendedState(HotkeyKind kind)
     {
-        Unregister();
-        if (_shortcut.IsEmpty)
+        var sc = ShortcutOf(kind);
+        _current[kind] = sc.IsEmpty ? HotkeyRegistration.Unassigned : new HotkeyRegistration(sc, HotkeyStatus.Suspended);
+    }
+
+    private void RegisterAll()
+    {
+        UnregisterAll();
+        foreach (var kind in Kinds)
         {
-            SetCurrent(HotkeyRegistration.Unassigned);
-            return;
+            var sc = ShortcutOf(kind);
+            if (sc.IsEmpty)
+            {
+                _current[kind] = HotkeyRegistration.Unassigned;
+                continue;
+            }
+            // MOD_NOREPEAT: 押しっぱなしの自動リピートでキャプチャーが連続しないようにする。
+            if (RegisterHotKey(_source.Handle, (int)kind, (int)sc.Modifiers | MOD_NOREPEAT, sc.Key))
+            {
+                _registered.Add(kind);
+                _current[kind] = new HotkeyRegistration(sc, HotkeyStatus.Registered);
+            }
+            else
+            {
+                _current[kind] = new HotkeyRegistration(sc, HotkeyStatus.Failed, Marshal.GetLastWin32Error());
+            }
         }
-        // MOD_NOREPEAT: 押しっぱなしの自動リピートでキャプチャーが連続しないようにする。
-        _registered = RegisterHotKey(_source.Handle, HotkeyId, (int)_shortcut.Modifiers | MOD_NOREPEAT, _shortcut.Key);
-        SetCurrent(_registered
-            ? new HotkeyRegistration(_shortcut, HotkeyStatus.Registered)
-            : new HotkeyRegistration(_shortcut, HotkeyStatus.Failed, Marshal.GetLastWin32Error()));
-    }
-
-    private void Unregister()
-    {
-        if (!_registered) return;
-        UnregisterHotKey(_source.Handle, HotkeyId);
-        _registered = false;
-    }
-
-    private void SetCurrent(HotkeyRegistration registration)
-    {
-        Current = registration;
         StatusChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void UnregisterAll()
+    {
+        foreach (var kind in _registered) UnregisterHotKey(_source.Handle, (int)kind);
+        _registered.Clear();
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == WM_HOTKEY && wParam.ToInt32() == HotkeyId)
+        if (msg == WM_HOTKEY)
         {
-            handled = true;
-            Pressed?.Invoke(this, EventArgs.Empty);
+            var id = wParam.ToInt64();
+            foreach (var kind in Kinds)
+            {
+                if (id != (long)kind) continue;
+                handled = true;
+                Pressed?.Invoke(kind);
+                break;
+            }
         }
         return IntPtr.Zero;
     }

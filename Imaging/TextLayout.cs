@@ -28,7 +28,42 @@ public static class TextLayout
         return ft;
     }
 
+    /// <summary>測定結果のキャッシュの上限（超えたら全消去する）。</summary>
+    public const int CacheLimit = 512;
+
+    /// <summary>測定に効く値だけのキー（位置・色・Id・縁取りは大きさに影響しない）。</summary>
+    private readonly record struct MeasureKey(string Text, string FontFamily, double FontSize);
+
+    private static readonly Dictionary<MeasureKey, SizeD> MeasureCache = [];
+    private static readonly object CacheGate = new();
+
+    /// <summary>今のキャッシュの件数（試験用）。</summary>
+    public static int CachedCount
+    {
+        get { lock (CacheGate) return MeasureCache.Count; }
+    }
+
+    /// <summary>
+    /// 文字の大きさ（画像座標）。マウスの移動のたびに全文字を組版しないよう、内容・フォント・文字サイズごとに結果を覚える（V1.4.0）。
+    /// </summary>
     public static SizeD Measure(TextAnnotation text)
+    {
+        var key = new MeasureKey(text.Text, text.FontFamily ?? "", text.FontSize);
+        lock (CacheGate)
+        {
+            if (MeasureCache.TryGetValue(key, out var cached)) return cached;
+        }
+        var size = MeasureUncached(text);
+        lock (CacheGate)
+        {
+            if (MeasureCache.Count >= CacheLimit) MeasureCache.Clear();
+            MeasureCache[key] = size;
+        }
+        return size;
+    }
+
+    /// <summary>キャッシュを通さずに測る。</summary>
+    public static SizeD MeasureUncached(TextAnnotation text)
     {
         var ft = Create(text);
         // WidthIncludingTrailingWhitespace: 末尾の空白も選択範囲に含める。

@@ -52,6 +52,27 @@ public static class SettingsNormalizer
         }
         s.CaptureHotkey ??= "";
 
+        // 前回と同じ範囲（V1.4.0）。読めない・規則違反は既定値にしてから、キャプチャーと同じ組み合わせなら未割当にする
+        // （同じ組み合わせは片方しか登録できないため。キャプチャーを優先する）。
+        if (!string.IsNullOrEmpty(s.RepeatCaptureHotkey))
+        {
+            if (!Shortcut.TryParse(s.RepeatCaptureHotkey, out var repeat) || repeat.Validate() != ShortcutValidation.Ok)
+            {
+                fixes.Add($"RepeatCaptureHotkey: '{s.RepeatCaptureHotkey}' → {Shortcut.DefaultRepeatCapture}");
+                s.RepeatCaptureHotkey = Shortcut.DefaultRepeatCapture.ToString();
+            }
+            else
+            {
+                s.RepeatCaptureHotkey = repeat.ToString();
+            }
+        }
+        s.RepeatCaptureHotkey ??= "";
+        if (s.RepeatCaptureHotkey.Length > 0 && s.RepeatCaptureHotkey == s.CaptureHotkey)
+        {
+            fixes.Add($"RepeatCaptureHotkey: '{s.RepeatCaptureHotkey}' duplicates CaptureHotkey → unassigned");
+            s.RepeatCaptureHotkey = "";
+        }
+
         s.QuickActions ??= new QuickActionSettings();
         var q = s.QuickActions;
         var defaults = new QuickActionSettings();

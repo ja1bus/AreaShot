@@ -73,7 +73,7 @@ public sealed class SettingsStoreTests : IDisposable
     [InlineData("{ this is not json")]
     [InlineData("")]
     [InlineData("null")]
-    [InlineData("{\"ImageFormat\": \"Bmp\"}")]
+    // 未知の列挙値（{"ImageFormat": "Bmp"}）は V1.4.0 から破損として扱わない（V140SettingsTests。仕様書 §24.9 D4）。
     public void Corrupt_file_gives_defaults_and_backup(string content)
     {
         File.WriteAllText(FilePath, content);

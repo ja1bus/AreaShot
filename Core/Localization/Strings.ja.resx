@@ -633,4 +633,67 @@
   <data name="SettingsErrorWorkFolderInvalid" xml:space="preserve">
     <value>連番の保存先: パスに使えない文字が含まれています。</value>
   </data>
+  <data name="ToolBadge" xml:space="preserve">
+    <value>番号</value>
+  </data>
+  <data name="ToolBadgeTip" xml:space="preserve">
+    <value>クリックで番号を置く</value>
+  </data>
+  <data name="ToolHighlight" xml:space="preserve">
+    <value>ハイライト</value>
+  </data>
+  <data name="ToolHighlightTip" xml:space="preserve">
+    <value>ドラッグで半透明に塗る</value>
+  </data>
+  <data name="ToolCrop" xml:space="preserve">
+    <value>トリミング</value>
+  </data>
+  <data name="ToolCropTip" xml:space="preserve">
+    <value>ドラッグで出力する範囲を指定（Delete で解除）</value>
+  </data>
+  <data name="ToolTipKeyFormat" xml:space="preserve">
+    <value>{0} ({1})</value>
+  </data>
+  <data name="EditorOutline" xml:space="preserve">
+    <value>縁取り</value>
+  </data>
+  <data name="EditorOutlineTip" xml:space="preserve">
+    <value>文字の周りに縁を付ける</value>
+  </data>
+  <data name="EditorStatusCropFormat" xml:space="preserve">
+    <value>　元 {0}×{1} → 出力 {2}×{3}</value>
+  </data>
+  <data name="TrayRepeatCapture" xml:space="preserve">
+    <value>前回と同じ範囲でキャプチャー</value>
+  </data>
+  <data name="TrayTipCaptureFormat" xml:space="preserve">
+    <value>キャプチャー: {0}</value>
+  </data>
+  <data name="TrayTipRepeatFormat" xml:space="preserve">
+    <value>前回と同じ範囲: {0}</value>
+  </data>
+  <data name="RepeatHotkeyLabelFormat" xml:space="preserve">
+    <value>前回と同じ範囲: {0}</value>
+  </data>
+  <data name="RepeatNoRegionBalloon" xml:space="preserve">
+    <value>前回の範囲がありません。範囲を選んでください。</value>
+  </data>
+  <data name="RepeatOutsideBalloon" xml:space="preserve">
+    <value>前回の範囲が今の画面の外にあります。範囲を選んでください。</value>
+  </data>
+  <data name="SettingsRepeatShortcut" xml:space="preserve">
+    <value>前回と同じ範囲</value>
+  </data>
+  <data name="SettingsHotkeyDuplicate" xml:space="preserve">
+    <value>キャプチャーと同じ組み合わせです</value>
+  </data>
+  <data name="SettingsErrorRepeatShortcutFormat" xml:space="preserve">
+    <value>前回と同じ範囲のショートカット: {0}</value>
+  </data>
+  <data name="SettingsErrorFolderNotFull" xml:space="preserve">
+    <value>保存フォルダー: 完全なパス（例 C:\…）を指定してください。</value>
+  </data>
+  <data name="SettingsErrorWorkFolderNotFull" xml:space="preserve">
+    <value>連番の保存先: 完全なパス（例 C:\…）を指定してください。</value>
+  </data>
 </root>

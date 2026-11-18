@@ -10,6 +10,12 @@ public enum AnnotationKind
     Line,
     Text,
     Mosaic,
+    /// <summary>番号バッジ（V1.4.0）。</summary>
+    Badge,
+    /// <summary>ハイライト（半透明の塗り。V1.4.0）。</summary>
+    Highlight,
+    /// <summary>トリミングの範囲（一覧に最大 1 つ。V1.4.0）。</summary>
+    Crop,
 }
 
 /// <summary>
@@ -46,8 +52,8 @@ public sealed record LineAnnotation(Guid Id, PointD Start, PointD End, ArgbColor
     public override Annotation MoveBy(double dx, double dy) => this with { Start = Start.Offset(dx, dy), End = End.Offset(dx, dy) };
 }
 
-/// <summary>文字。<see cref="Position"/> は文字列の左上。改行を含んでよい。</summary>
-public sealed record TextAnnotation(Guid Id, PointD Position, string Text, ArgbColor Color, string FontFamily, double FontSize) : Annotation(Id)
+/// <summary>文字。<see cref="Position"/> は文字列の左上。改行を含んでよい。<see cref="Outline"/> は縁取り（V1.4.0）。</summary>
+public sealed record TextAnnotation(Guid Id, PointD Position, string Text, ArgbColor Color, string FontFamily, double FontSize, bool Outline = false) : Annotation(Id)
 {
     public override AnnotationKind Kind => AnnotationKind.Text;
     public override Annotation MoveBy(double dx, double dy) => this with { Position = Position.Offset(dx, dy) };
@@ -57,5 +63,35 @@ public sealed record TextAnnotation(Guid Id, PointD Position, string Text, ArgbC
 public sealed record MosaicAnnotation(Guid Id, RectD Bounds) : Annotation(Id)
 {
     public override AnnotationKind Kind => AnnotationKind.Mosaic;
+    public override Annotation MoveBy(double dx, double dy) => this with { Bounds = Bounds.Offset(dx, dy) };
+}
+
+/// <summary>番号バッジ（V1.4.0）。塗りつぶした円（直径 = 文字サイズ × 1.6）に白の太字で番号を描く。</summary>
+public sealed record BadgeAnnotation(Guid Id, PointD Center, int Number, ArgbColor Color, double FontSize) : Annotation(Id)
+{
+    public override AnnotationKind Kind => AnnotationKind.Badge;
+    public override Annotation MoveBy(double dx, double dy) => this with { Center = Center.Offset(dx, dy) };
+}
+
+/// <summary>ハイライト（V1.4.0）。枠線なし、塗りの不透明度は固定（<see cref="Alpha"/>）。</summary>
+public sealed record HighlightAnnotation(Guid Id, RectD Bounds, ArgbColor Color) : Annotation(Id)
+{
+    /// <summary>塗りの不透明度（色の A を置き換える）。</summary>
+    public const byte Alpha = 0x60;
+
+    public override AnnotationKind Kind => AnnotationKind.Highlight;
+    public override Annotation MoveBy(double dx, double dy) => this with { Bounds = Bounds.Offset(dx, dy) };
+
+    /// <summary>描画に使う色（A を <see cref="Alpha"/> にする）。</summary>
+    public ArgbColor FillColor => Color with { A = Alpha };
+}
+
+/// <summary>
+/// トリミングの範囲（V1.4.0）。一覧に最大 1 つ（<see cref="AnnotationOps.ReplaceCrop"/>）。
+/// 座標は元画像のままで、他の注釈の座標は変えない。出力時に合成してから切り出す。
+/// </summary>
+public sealed record CropAnnotation(Guid Id, RectD Bounds) : Annotation(Id)
+{
+    public override AnnotationKind Kind => AnnotationKind.Crop;
     public override Annotation MoveBy(double dx, double dy) => this with { Bounds = Bounds.Offset(dx, dy) };
 }

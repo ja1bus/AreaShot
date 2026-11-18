@@ -25,14 +25,31 @@ public static class AnnotationOps
         id is null ? null : list.Find(a => a.Id == id.Value);
 
     /// <summary>
-    /// 描画順（下から上）。モザイクを先にまとめて描き、その上に四角形・矢印・文字を追加順に描く。
+    /// 描画順（下から上）。モザイクを先にまとめて描き、その上に直線・四角形・矢印・文字・番号・ハイライトを追加順に描く。
     /// モザイクは元画像から生成するため、上に描くと先に描いた注釈を消してしまう。これを避ける（仕様書 §10.4）。
+    /// トリミング（V1.4.0）は最後（表示では暗幕と枠を一番上に描く。出力では描かずに切り出す）。
     /// </summary>
     public static IEnumerable<Annotation> InRenderOrder(IEnumerable<Annotation> list)
     {
         var items = list as IReadOnlyList<Annotation> ?? list.ToList();
         foreach (var a in items) if (a.Kind == AnnotationKind.Mosaic) yield return a;
-        foreach (var a in items) if (a.Kind != AnnotationKind.Mosaic) yield return a;
+        foreach (var a in items) if (a.Kind is not AnnotationKind.Mosaic and not AnnotationKind.Crop) yield return a;
+        foreach (var a in items) if (a.Kind == AnnotationKind.Crop) yield return a;
+    }
+
+    /// <summary>トリミングの範囲（最初の 1 つ）。無ければ null。</summary>
+    public static CropAnnotation? CropOf(IEnumerable<Annotation> list) => list.OfType<CropAnnotation>().FirstOrDefault();
+
+    /// <summary>既存のトリミングをすべて除いてから <paramref name="crop"/> を末尾に足す（一覧に最大 1 つを保つ。V1.4.0）。</summary>
+    public static ImmutableList<Annotation> ReplaceCrop(this ImmutableList<Annotation> list, CropAnnotation crop) =>
+        list.RemoveAll(a => a is CropAnnotation).Add(crop);
+
+    /// <summary>次の番号バッジの番号（一覧のバッジの最大番号＋1。無ければ 1）。削除しても振り直さない（V1.4.0）。</summary>
+    public static int NextBadgeNumber(IEnumerable<Annotation> list)
+    {
+        var max = 0;
+        foreach (var a in list) if (a is BadgeAnnotation b && b.Number > max) max = b.Number;
+        return max + 1;
     }
 
     /// <summary>オブジェクトの外接矩形（画像座標）。</summary>
@@ -43,6 +60,9 @@ public static class AnnotationOps
         ArrowAnnotation ar => RectD.FromPoints(ar.Start, ar.End),
         LineAnnotation l => RectD.FromPoints(l.Start, l.End),
         TextAnnotation t => TextBounds(t, measure(t)),
+        BadgeAnnotation b => BadgeGeometry.Bounds(b.Center, b.FontSize),
+        HighlightAnnotation h => h.Bounds,
+        CropAnnotation c => c.Bounds,
         _ => default,
     };
 
@@ -56,12 +76,31 @@ public static class AnnotationOps
         ArrowAnnotation ar => ArrowGeometry.DistanceToSegment(p, ar.Start, ar.End) <= tolerance + ar.StrokeWidth / 2,
         LineAnnotation l => ArrowGeometry.DistanceToSegment(p, l.Start, l.End) <= tolerance + l.StrokeWidth / 2,
         TextAnnotation t => BoundsOf(t, measure).Inflate(tolerance).Contains(p),
+        BadgeAnnotation b => PointD.Distance(p, b.Center) <= BadgeGeometry.Radius(b.FontSize) + tolerance,
+        HighlightAnnotation h => h.Bounds.Inflate(tolerance).Contains(p),
+        // トリミングは枠の近くだけ（内側全体を当たりにすると、範囲内の他の注釈を選べなくなる）。
+        CropAnnotation c => c.Bounds.Inflate(tolerance).Contains(p) && !StrictlyInside(c.Bounds, tolerance, p),
         _ => false,
     };
 
-    /// <summary>最も上に描かれているオブジェクトから順に当たり判定し、最初に当たったものを返す。</summary>
-    public static Annotation? HitTop(IEnumerable<Annotation> list, PointD p, double tolerance, TextMeasurer measure) =>
-        InRenderOrder(list).Reverse().FirstOrDefault(a => HitTest(a, p, tolerance, measure));
+    /// <summary>点が矩形の各辺から <paramref name="margin"/> より内側にあるか。</summary>
+    private static bool StrictlyInside(RectD r, double margin, PointD p) =>
+        p.X > r.Left + margin && p.X < r.Right - margin && p.Y > r.Top + margin && p.Y < r.Bottom - margin;
+
+    /// <summary>
+    /// 最も上に描かれているオブジェクトから順に当たり判定し、最初に当たったものを返す。
+    /// トリミングは最後に判定する（他の注釈を優先する。V1.4.0）。
+    /// </summary>
+    public static Annotation? HitTop(IEnumerable<Annotation> list, PointD p, double tolerance, TextMeasurer measure)
+    {
+        var ordered = InRenderOrder(list).ToList();
+        for (var i = ordered.Count - 1; i >= 0; i--)
+        {
+            var a = ordered[i];
+            if (a.Kind != AnnotationKind.Crop && HitTest(a, p, tolerance, measure)) return a;
+        }
+        return ordered.FirstOrDefault(a => a.Kind == AnnotationKind.Crop && HitTest(a, p, tolerance, measure));
+    }
 
     /// <summary>選択中オブジェクトのつまみ（変形用）の当たり判定。本体は含まない。</summary>
     public static HandleKind HitHandle(Annotation a, PointD p, double handleRadius)
@@ -78,8 +117,8 @@ public static class AnnotationOps
                 if (PointD.Distance(p, l.End) <= handleRadius) return HandleKind.ArrowEnd;
                 if (PointD.Distance(p, l.Start) <= handleRadius) return HandleKind.ArrowStart;
                 return HandleKind.None;
-            case RectangleAnnotation or MosaicAnnotation:
-                var bounds = a is RectangleAnnotation r ? r.Bounds : ((MosaicAnnotation)a).Bounds;
+            case RectangleAnnotation or MosaicAnnotation or HighlightAnnotation or CropAnnotation:
+                var bounds = RectBoundsOf(a) ?? default;
                 foreach (var h in HandleMath.RectHandles)
                 {
                     var hp = HandleMath.PositionOf(bounds, h);
@@ -87,9 +126,19 @@ public static class AnnotationOps
                 }
                 return HandleKind.None;
             default:
-                return HandleKind.None; // 文字はつまみで変形しない（サイズは文字サイズで変える）
+                return HandleKind.None; // 文字・番号はつまみで変形しない（大きさは文字サイズで変える）
         }
     }
+
+    /// <summary>矩形系（四角形・モザイク・ハイライト・トリミング）の Bounds。それ以外は null。</summary>
+    public static RectD? RectBoundsOf(Annotation a) => a switch
+    {
+        RectangleAnnotation r => r.Bounds,
+        MosaicAnnotation m => m.Bounds,
+        HighlightAnnotation h => h.Bounds,
+        CropAnnotation c => c.Bounds,
+        _ => null,
+    };
 
     /// <summary>
     /// ドラッグ開始時のオブジェクト <paramref name="original"/> を、つまみ <paramref name="handle"/> で (dx, dy) 動かした結果。
@@ -101,6 +150,8 @@ public static class AnnotationOps
         {
             RectangleAnnotation r => r with { Bounds = HandleMath.Resize(r.Bounds, handle, dx, dy) },
             MosaicAnnotation m => m with { Bounds = HandleMath.Resize(m.Bounds, handle, dx, dy) },
+            HighlightAnnotation h => h with { Bounds = HandleMath.Resize(h.Bounds, handle, dx, dy) },
+            CropAnnotation c => c with { Bounds = HandleMath.Resize(c.Bounds, handle, dx, dy) },
             ArrowAnnotation ar when handle == HandleKind.ArrowStart => ar with { Start = ar.Start.Offset(dx, dy) },
             ArrowAnnotation ar when handle == HandleKind.ArrowEnd => ar with { End = ar.End.Offset(dx, dy) },
             LineAnnotation l when handle == HandleKind.ArrowStart => l with { Start = l.Start.Offset(dx, dy) },
@@ -116,6 +167,8 @@ public static class AnnotationOps
     {
         RectangleAnnotation r => r with { Bounds = RectD.FromPoints(start, current) },
         MosaicAnnotation m => m with { Bounds = RectD.FromPoints(start, current) },
+        HighlightAnnotation h => h with { Bounds = RectD.FromPoints(start, current) },
+        CropAnnotation c => c with { Bounds = RectD.FromPoints(start, current) },
         ArrowAnnotation ar => ar with { Start = start, End = current },
         LineAnnotation l => l with { Start = start, End = current },
         _ => created,
@@ -126,6 +179,9 @@ public static class AnnotationOps
     {
         RectangleAnnotation r => r.Bounds.Width < minSize || r.Bounds.Height < minSize,
         MosaicAnnotation m => m.Bounds.Width < minSize || m.Bounds.Height < minSize,
+        HighlightAnnotation h => h.Bounds.Width < minSize || h.Bounds.Height < minSize,
+        CropAnnotation c => c.Bounds.Width < minSize || c.Bounds.Height < minSize,
+        BadgeAnnotation => false, // クリックで置くため大きさの下限は無い
         ArrowAnnotation ar => PointD.Distance(ar.Start, ar.End) < minSize,
         LineAnnotation l => PointD.Distance(l.Start, l.End) < minSize,
         TextAnnotation t => string.IsNullOrWhiteSpace(t.Text),
@@ -133,14 +189,16 @@ public static class AnnotationOps
     };
 
     /// <summary>スタイルを変更した複製。対象外の項目は無視する。変更が無ければ同じインスタンスを返す。</summary>
-    public static Annotation WithStyle(Annotation a, ArgbColor? color = null, double? strokeWidth = null, string? fontFamily = null, double? fontSize = null)
+    public static Annotation WithStyle(Annotation a, ArgbColor? color = null, double? strokeWidth = null, string? fontFamily = null, double? fontSize = null, bool? outline = null)
     {
         Annotation result = a switch
         {
             RectangleAnnotation r => r with { Color = color ?? r.Color, StrokeWidth = strokeWidth ?? r.StrokeWidth },
             ArrowAnnotation ar => ar with { Color = color ?? ar.Color, StrokeWidth = strokeWidth ?? ar.StrokeWidth },
             LineAnnotation l => l with { Color = color ?? l.Color, StrokeWidth = strokeWidth ?? l.StrokeWidth },
-            TextAnnotation t => t with { Color = color ?? t.Color, FontFamily = fontFamily ?? t.FontFamily, FontSize = fontSize ?? t.FontSize },
+            TextAnnotation t => t with { Color = color ?? t.Color, FontFamily = fontFamily ?? t.FontFamily, FontSize = fontSize ?? t.FontSize, Outline = outline ?? t.Outline },
+            BadgeAnnotation b => b with { Color = color ?? b.Color, FontSize = fontSize ?? b.FontSize },
+            HighlightAnnotation h => h with { Color = color ?? h.Color },
             _ => a,
         };
         return result.Equals(a) ? a : result;

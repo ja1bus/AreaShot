@@ -6,6 +6,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using AreaShot.Capture;
 using static AreaShot.Interop.NativeMethods;
 using AreaShot.Core.Localization;
 
@@ -13,6 +14,7 @@ namespace AreaShot.Views;
 
 /// <summary>
 /// 保存完了・コピー完了の軽量な通知（仕様書 §12.4）。画面右下に数秒だけ表示し、フォーカスを奪わない。
+/// 基準点（キャプチャーした範囲の中心。物理ピクセル）があれば、そのモニターの作業領域の右下に出す（V1.4.0）。無ければ主モニター。
 /// 保存の通知をクリックすると、保存したファイルをエクスプローラーで選択した状態で開く。
 /// OS のトースト通知は AppUserModelID の登録などが必要になるため使わない。
 /// </summary>
@@ -21,6 +23,10 @@ public sealed class ToastWindow : Window
     private static ToastWindow? _current;
     private readonly DispatcherTimer _timer;
     private readonly string? _path;
+    /// <summary>通知の右・下の余白（DIU）。</summary>
+    private const double EdgeMargin = 16;
+    /// <summary>基準点のモニター（null は主モニター）。</summary>
+    private DisplayInfo.MonitorArea? _monitor;
 
     /// <param name="path">保存したファイル。null はコピーの通知（クリックで閉じるだけ）。</param>
     private ToastWindow(string title, string detail, string? path, TimeSpan duration)
@@ -80,22 +86,59 @@ public sealed class ToastWindow : Window
         MouseLeave += (_, _) => _timer.Start();
 
         // 主モニターの作業領域の右下（DIU）。高さは内容で決まるため、大きさが決まるたびに下端を合わせる。
+        // 基準点のモニターに出す場合（PlaceOnMonitor）は、物理ピクセルで置き直す。
         var work = SystemParameters.WorkArea;
         WindowStartupLocation = WindowStartupLocation.Manual;
-        Left = work.Right - Width - 16;
+        Left = work.Right - Width - EdgeMargin;
         Top = work.Bottom - 120;
-        SizeChanged += (_, _) => Top = work.Bottom - ActualHeight - 16;
+        SizeChanged += (_, _) =>
+        {
+            if (_monitor is null) Top = work.Bottom - ActualHeight - EdgeMargin;
+            else PlacePhysically();
+        };
     }
 
-    public static void ShowSaved(string path) =>
-        Present(new ToastWindow(Strings.ToastSavedTitle, string.Format(Strings.ToastSavedFormat, path), path, TimeSpan.FromSeconds(4)));
+    /// <param name="anchor">キャプチャーした範囲の中心（物理ピクセル）。null は主モニター。</param>
+    public static void ShowSaved(string path, (int X, int Y)? anchor = null) =>
+        Present(new ToastWindow(Strings.ToastSavedTitle, string.Format(Strings.ToastSavedFormat, path), path, TimeSpan.FromSeconds(4)), anchor);
 
     /// <summary>キーを押しながら離してコピーしたときの通知（ダイアログが出ないため、完了が分かるようにする）。</summary>
-    public static void ShowCopied() =>
-        Present(new ToastWindow(Strings.ToastCopiedTitle, Strings.ToastCopiedDetail, null, TimeSpan.FromSeconds(2)));
+    public static void ShowCopied((int X, int Y)? anchor = null) =>
+        Present(new ToastWindow(Strings.ToastCopiedTitle, Strings.ToastCopiedDetail, null, TimeSpan.FromSeconds(2)), anchor);
 
-    private static void Present(ToastWindow toast)
+    /// <summary>
+    /// 基準点のモニターの作業領域の右下に出すよう準備する（<see cref="Window.Show"/> の前に呼ぶ）。
+    /// 作成前の位置はシステム DPI で換算した概算で、作成後と大きさが変わるたびに <see cref="PlacePhysically"/> で物理ピクセルに合わせる。
+    /// </summary>
+    private void PlaceOnMonitor((int X, int Y) anchor)
     {
+        var monitor = DisplayInfo.MonitorAt(anchor.X, anchor.Y);
+        _monitor = monitor;
+        var work = monitor.WorkArea;
+        var scale = monitor.DpiScale;
+        var sys = DisplayInfo.SystemDpiScale;
+        Left = (work.Right - (Width + EdgeMargin) * scale) / sys;
+        Top = (work.Bottom - 120 * scale) / sys;
+    }
+
+    private void PlacePhysically()
+    {
+        if (_monitor is not { } monitor) return;
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd == IntPtr.Zero || !GetWindowRect(hwnd, out var r)) return;
+        var work = monitor.WorkArea;
+        var margin = (int)Math.Round(EdgeMargin * monitor.DpiScale);
+        var w = r.Right - r.Left;
+        var h = r.Bottom - r.Top;
+        var x = Math.Max(work.Left, work.Right - w - margin);
+        var y = Math.Max(work.Top, work.Bottom - h - margin);
+        if (x == r.Left && y == r.Top) return;
+        SetWindowPos(hwnd, IntPtr.Zero, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+
+    private static void Present(ToastWindow toast, (int X, int Y)? anchor = null)
+    {
+        if (anchor is { } a) toast.PlaceOnMonitor(a);
         _current?.Close();
         _current = toast;
         toast.Closed += (_, _) => { if (_current == toast) _current = null; };
@@ -110,6 +153,7 @@ public sealed class ToastWindow : Window
         var hwnd = new WindowInteropHelper(this).Handle;
         var ex = GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();
         SetWindowLongPtr(hwnd, GWL_EXSTYLE, new IntPtr(ex | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE));
+        PlacePhysically();
     }
 
     protected override void OnContentRendered(EventArgs e)

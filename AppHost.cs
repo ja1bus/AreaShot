@@ -41,6 +41,8 @@ public sealed class AppHost : ISettingsHost, IDisposable
     private CaptureOverlayWindow? _overlay;
     private SettingsWindow? _settingsWindow;
     private DispatcherTimer? _delayedCapture;
+    /// <summary>直前に範囲選択で確定した範囲（仮想デスクトップの物理ピクセル）。起動中だけ記憶し、画面構成の変更で破棄する（V1.4.0）。</summary>
+    private PixelRect? _lastRegion;
     private bool _memoryCollectionQueued;
     private bool _choosingWorkFolder;
     private bool _disposed;
@@ -55,7 +57,7 @@ public sealed class AppHost : ISettingsHost, IDisposable
 
     public AppSettings Settings => _settings;
 
-    public HotkeyRegistration HotkeyRegistration => _hotkey?.Current ?? HotkeyRegistration.Unassigned;
+    public HotkeyRegistration Hotkey(HotkeyKind kind) => _hotkey?.Get(kind) ?? HotkeyRegistration.Unassigned;
 
     public event EventHandler? HotkeyRegistrationChanged;
 
@@ -100,14 +102,19 @@ public sealed class AppHost : ISettingsHost, IDisposable
 
         _tray = new TrayService();
         _tray.CaptureRequested += (_, _) => StartCapture(MenuCloseDelayMs);
+        _tray.RepeatCaptureRequested += (_, _) => StartRepeatCapture(MenuCloseDelayMs);
         _tray.SettingsRequested += (_, _) => ShowSettings();
         _tray.ExitRequested += (_, _) => Exit();
 
         _hotkey = new GlobalHotkeyService();
-        _hotkey.Pressed += (_, _) => StartCapture(0);
+        _hotkey.Pressed += kind =>
+        {
+            if (kind == HotkeyKind.RepeatCapture) StartRepeatCapture(0);
+            else StartCapture(0);
+        };
         _hotkey.StatusChanged += (_, _) =>
         {
-            _tray?.UpdateHotkey(_hotkey.Current);
+            _tray?.UpdateHotkeys(_hotkey.Get(HotkeyKind.Capture), _hotkey.Get(HotkeyKind.RepeatCapture));
             HotkeyRegistrationChanged?.Invoke(this, EventArgs.Empty);
         };
 
@@ -118,11 +125,13 @@ public sealed class AppHost : ISettingsHost, IDisposable
                 (load.BackupPath is null ? "" : "\n" + string.Format(Strings.SettingsCorruptBackupFormat, Path.GetFileName(load.BackupPath))), warning: true);
         }
 
-        var registration = RegisterHotkeyFromSettings();
-        if (registration.Status == HotkeyStatus.Failed)
+        RegisterHotkeysFromSettings();
+        var registration = Hotkey(HotkeyKind.Capture);
+        var failed = HotkeyFailures(registration, Hotkey(HotkeyKind.RepeatCapture), d => d);
+        if (failed.Count > 0)
         {
             _tray.ShowBalloon(Strings.HotkeyFailedBalloonTitle,
-                registration.Describe() + "\n" + Strings.HotkeyFailedBalloonHint, warning: true);
+                string.Join("\n", failed) + "\n" + Strings.HotkeyFailedBalloonHint, warning: true);
         }
         else if (load.Status == SettingsLoadStatus.Missing)
         {
@@ -133,10 +142,21 @@ public sealed class AppHost : ISettingsHost, IDisposable
         SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
     }
 
-    private HotkeyRegistration RegisterHotkeyFromSettings()
+    /// <summary>2 本のショートカットを設定から登録し直す（全件を解除してから全件を登録する）。</summary>
+    private void RegisterHotkeysFromSettings()
     {
-        Shortcut.TryParse(_settings.CaptureHotkey, out var shortcut);
-        return _hotkey!.Apply(shortcut);
+        Shortcut.TryParse(_settings.CaptureHotkey, out var capture);
+        Shortcut.TryParse(_settings.RepeatCaptureHotkey, out var repeat);
+        _hotkey!.ApplyAll(capture, repeat);
+    }
+
+    /// <summary>登録に失敗したショートカットの説明（前回と同じ範囲には「前回と同じ範囲: 」を付ける）。</summary>
+    private static List<string> HotkeyFailures(HotkeyRegistration capture, HotkeyRegistration repeat, Func<string, string> format)
+    {
+        var list = new List<string>();
+        if (capture.Status == HotkeyStatus.Failed) list.Add(format(capture.Describe()));
+        if (repeat.Status == HotkeyStatus.Failed) list.Add(string.Format(Strings.RepeatHotkeyLabelFormat, format(repeat.Describe())));
+        return list;
     }
 
     // ---- キャプチャー ----
@@ -169,6 +189,72 @@ public sealed class AppHost : ISettingsHost, IDisposable
         _delayedCapture.Start();
     }
 
+    /// <summary>
+    /// 前回と同じ範囲でキャプチャーする（V1.4.0。仕様書 §4）。範囲選択を出さずに画面を取得して切り出し、キャプチャー後ダイアログを出す。
+    /// 記憶が無い・範囲が今の画面の外ならバルーンで知らせて通常のキャプチャーにする。
+    /// </summary>
+    public void StartRepeatCapture(int delayMs)
+    {
+        if (_disposed) return;
+        if (!App.EnsureExecutablePresent()) return;
+        if (_overlay is not null)
+        {
+            _overlay.BringToFront();
+            return;
+        }
+        if (_delayedCapture is not null) return;
+        if (delayMs <= 0)
+        {
+            BeginRepeatCapture();
+            return;
+        }
+        _delayedCapture = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(delayMs) };
+        _delayedCapture.Tick += (_, _) =>
+        {
+            _delayedCapture?.Stop();
+            _delayedCapture = null;
+            if (!App.EnsureExecutablePresent()) return;
+            BeginRepeatCapture();
+        };
+        _delayedCapture.Start();
+    }
+
+    private void BeginRepeatCapture()
+    {
+        if (_lastRegion is not { } region)
+        {
+            _tray?.ShowBalloon("AreaShot", Strings.RepeatNoRegionBalloon, warning: false);
+            BeginCapture();
+            return;
+        }
+        ToastWindow.CloseCurrent(); // 通知がキャプチャーに写らないように
+        var snapshot = ScreenCapturer.CaptureVirtualScreen();
+        if (snapshot is null)
+        {
+            _tray?.ShowBalloon("AreaShot", Strings.CaptureScreenFailed, warning: true);
+            return;
+        }
+        var rect = region.Intersect(snapshot.Bounds);
+        if (rect.IsEmpty)
+        {
+            _tray?.ShowBalloon("AreaShot", Strings.RepeatOutsideBalloon, warning: false);
+            BeginCapture();
+            return;
+        }
+        FontCatalog.WarmUpOnceInBackground();
+        var image = CropCapture(snapshot, rect);
+        var (cx, cy) = image.ScreenCenter;
+        ShowResultDialog(image, cx, cy);
+        ReleaseMemorySoon();
+    }
+
+    private static CapturedImage CropCapture(ScreenSnapshot snapshot, PixelRect rect)
+    {
+        var local = SelectionMath.ToImageSpace(rect, snapshot.Bounds);
+        var source = BitmapConvert.CropOpaqueSource(snapshot.Image, new Int32Rect(local.X, local.Y, local.Width, local.Height));
+        return new CapturedImage(source, rect);
+    }
+
     private void BeginCapture()
     {
         ToastWindow.CloseCurrent(); // 通知がキャプチャーに写らないように
@@ -195,9 +281,9 @@ public sealed class AppHost : ISettingsHost, IDisposable
 
     private void OnAreaSelected(ScreenSnapshot snapshot, AreaSelection selection)
     {
-        var local = SelectionMath.ToImageSpace(selection.Rect, snapshot.Bounds);
-        var source = BitmapConvert.CropOpaqueSource(snapshot.Image, new Int32Rect(local.X, local.Y, local.Width, local.Height));
-        var image = new CapturedImage(source, selection.Rect);
+        var image = CropCapture(snapshot, selection.Rect);
+        _lastRegion = selection.Rect; // 前回と同じ範囲（V1.4.0）
+        _tray?.SetRepeatAvailable(true);
         if (!RunQuickAction(image, selection.Action))
             ShowResultDialog(image, selection.ReleaseX, selection.ReleaseY);
         // 選択が終われば仮想画面全体の静止画は不要。ダイアログ・エディタが開いていても回収候補にする。
@@ -210,12 +296,13 @@ public sealed class AppHost : ISettingsHost, IDisposable
     /// </summary>
     private bool RunQuickAction(CapturedImage image, QuickAction? action)
     {
+        var anchor = image.ScreenCenter;
         var done = action switch
         {
             QuickAction.Copy => _output.CopyToClipboard(image.Source, null),
             // 連番＋説明では説明の入力画面を出す。キャンセルしたらダイアログを出す（画像を失わない）。
-            QuickAction.Save => SaveToDestination(_ => image.Source, null),
-            QuickAction.SaveAs => SaveAs(image.Source, null),
+            QuickAction.Save => SaveToDestination(_ => image.Source, null, anchor),
+            QuickAction.SaveAs => SaveAs(image.Source, null, anchor),
             QuickAction.Edit => true,
             _ => false,
         };
@@ -225,7 +312,7 @@ public sealed class AppHost : ISettingsHost, IDisposable
             OpenEditor(image);
             return true;
         }
-        if (action == QuickAction.Copy && _settings.ShowSaveNotification) ToastWindow.ShowCopied();
+        if (action == QuickAction.Copy && _settings.ShowSaveNotification) ToastWindow.ShowCopied(anchor);
         ReleaseMemorySoon();
         return true;
     }
@@ -235,6 +322,9 @@ public sealed class AppHost : ISettingsHost, IDisposable
         // 別スレッドから来ることがある。範囲選択中にモニター構成が変わったら、座標が合わなくなるので中止する。
         _app.Dispatcher.BeginInvoke(() =>
         {
+            // 前回と同じ範囲は座標が合わなくなるので破棄する（範囲選択中かどうかによらない。V1.4.0）。
+            _lastRegion = null;
+            _tray?.SetRepeatAvailable(false);
             if (_overlay is null) return;
             _overlay.Cancel();
             _tray?.ShowBalloon("AreaShot", Strings.CaptureCancelledDisplayChanged, warning: false);
@@ -262,10 +352,10 @@ public sealed class AppHost : ISettingsHost, IDisposable
                 if (_output.CopyToClipboard(image.Source, dialog)) dialog.CloseAfterAction();
                 break;
             case CaptureAction.Save:
-                if (SaveToDestination(_ => image.Source, dialog)) dialog.CloseAfterAction();
+                if (SaveToDestination(_ => image.Source, dialog, image.ScreenCenter)) dialog.CloseAfterAction();
                 break;
             case CaptureAction.SaveAs:
-                if (SaveAs(image.Source, dialog)) dialog.CloseAfterAction();
+                if (SaveAs(image.Source, dialog, image.ScreenCenter)) dialog.CloseAfterAction();
                 break;
             case CaptureAction.Edit:
                 dialog.CloseAfterAction();
@@ -313,6 +403,7 @@ public sealed class AppHost : ISettingsHost, IDisposable
         }
 
         bool ok;
+        var anchor = editor.Image.ScreenCenter;
         switch (action)
         {
             case CaptureAction.Copy:
@@ -320,12 +411,12 @@ public sealed class AppHost : ISettingsHost, IDisposable
                 break;
             case CaptureAction.Save:
                 // 連番＋説明では、説明を確定してから合成する。
-                ok = SaveToDestination(owner => ComposeOrReport(editor, owner), editor);
+                ok = SaveToDestination(owner => ComposeOrReport(editor, owner), editor, anchor);
                 break;
             case CaptureAction.SaveAs:
                 var target = _output.ChooseSaveAs(editor);
                 if (target is null) return;
-                var path = ComposeOrReport(editor, editor) is { } composed ? _output.SaveAsToTarget(composed, target, editor) : null;
+                var path = ComposeOrReport(editor, editor) is { } composed ? _output.SaveAsToTarget(composed, target, editor, anchor) : null;
                 if (path is not null) RememberWorkFolder(path, editor);
                 ok = path is not null;
                 break;
@@ -366,25 +457,25 @@ public sealed class AppHost : ISettingsHost, IDisposable
     /// <paramref name="image"/> は保存の直前に呼ぶ（引数はエラー表示の親）。null を返したら中止（エラーは表示済み）。
     /// 保存できたら true。失敗・キャンセルでは false（呼び出し側は画像を残す）。
     /// </summary>
-    private bool SaveToDestination(Func<Window?, BitmapSource?> image, Window? owner)
+    private bool SaveToDestination(Func<Window?, BitmapSource?> image, Window? owner, (int X, int Y)? anchor)
     {
         var plan = _output.PlanSave();
         if (plan.Mode != FileNamingMode.SequentialWithDescription)
-            return image(owner) is { } source && _output.Save(source, plan, null, owner) is not null;
+            return image(owner) is { } source && _output.Save(source, plan, null, owner, anchor) is not null;
 
         BitmapSource? composed = null;
         var dialog = new DescriptionDialog(plan, owner, (description, dialogWindow) =>
         {
             composed ??= image(dialogWindow);
-            return composed is not null && _output.Save(composed, plan, description, dialogWindow) is not null;
+            return composed is not null && _output.Save(composed, plan, description, dialogWindow, anchor) is not null;
         });
         return dialog.ShowDialog() == true;
     }
 
     /// <summary>「名前を付けて保存」。保存できたら、保存したフォルダを作業用フォルダにする。</summary>
-    private bool SaveAs(BitmapSource image, Window? owner)
+    private bool SaveAs(BitmapSource image, Window? owner, (int X, int Y)? anchor)
     {
-        var path = _output.SaveAs(image, owner);
+        var path = _output.SaveAs(image, owner, anchor);
         if (path is null) return false;
         RememberWorkFolder(path, owner);
         return true;
@@ -506,9 +597,9 @@ public sealed class AppHost : ISettingsHost, IDisposable
         // 名前の付け方・保存先の変更を、開いている画面へ反映する（再起動は不要）。
         RefreshDestinations();
 
-        var registration = RegisterHotkeyFromSettings();
-        if (registration.Status == HotkeyStatus.Failed)
-            failures.Add(string.Format(Strings.HotkeyRegisterFailedFormat, registration.Describe()));
+        RegisterHotkeysFromSettings();
+        failures.AddRange(HotkeyFailures(Hotkey(HotkeyKind.Capture), Hotkey(HotkeyKind.RepeatCapture),
+            d => string.Format(Strings.HotkeyRegisterFailedFormat, d)));
 
         if (autoStart != AutoStartService.IsEnabled() && AutoStartService.SetEnabled(autoStart) is { } autoStartError)
             failures.Add(string.Format(Strings.AutoStartFailedFormat, autoStartError));
@@ -567,9 +658,9 @@ public sealed class AppHost : ISettingsHost, IDisposable
 
     // ---- その他 ----
 
-    private void NotifySaved(string path)
+    private void NotifySaved(string path, (int X, int Y)? anchor)
     {
-        if (_settings.ShowSaveNotification) ToastWindow.ShowSaved(path);
+        if (_settings.ShowSaveNotification) ToastWindow.ShowSaved(path, anchor);
     }
 
     public void NotifyAlreadyRunning() =>

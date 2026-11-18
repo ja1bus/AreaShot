@@ -38,7 +38,7 @@ public partial class EditorWindow : Window
     private TextBox? _textBox;
     private TextAnnotation? _editingText;
     private PointD _editingPosition;
-    private (ArgbColor Color, string Font, double Size) _editingStyle;
+    private (ArgbColor Color, string Font, double Size, bool Outline) _editingStyle;
 
     public EditorWindow(CapturedImage image, EditorDefaults defaults, SaveDestination destination)
     {
@@ -60,7 +60,7 @@ public partial class EditorWindow : Window
             CommitTextEdit();
             e.Handled = true;
         };
-        _history.Changed += (_, _) => UpdateCommandStates();
+        _history.Changed += (_, _) => { UpdateCommandStates(); UpdateStatus(); };
 
         ColorBox.ItemsSource = _colorItems;
         WidthBox.ItemsSource = EditorPresets.StrokeWidths;
@@ -71,6 +71,8 @@ public partial class EditorWindow : Window
         ArgbColor.TryParse(_defaults.Color, out var color);
         _canvas.CurrentColor = color;
         _canvas.CurrentStrokeWidth = _defaults.StrokeWidth;
+        _canvas.CurrentFontSize = _defaults.FontSize;
+        SetToolTips();
 
         RectangleTool.IsChecked = true; // 既定のツールは四角形（キャプチャー直後に注釈を描くことが多いため）
         SyncStyleControls();
@@ -122,19 +124,32 @@ public partial class EditorWindow : Window
 
     // ---- ツール・スタイル ----
 
+    /// <summary>ツールと単キー（V1.4.0。トリミングにはキーを割り当てない）。</summary>
+    private IEnumerable<(RadioButton Button, EditTool Tool, Key? Key, string Tip)> Tools()
+    {
+        yield return (SelectTool, EditTool.Select, Key.S, Strings.ToolSelectTip);
+        yield return (LineTool, EditTool.Line, Key.L, Strings.ToolLine);
+        yield return (RectangleTool, EditTool.Rectangle, Key.R, Strings.ToolRectangle);
+        yield return (ArrowTool, EditTool.Arrow, Key.A, Strings.ToolArrow);
+        yield return (TextTool, EditTool.Text, Key.T, Strings.ToolTextTip);
+        yield return (MosaicTool, EditTool.Mosaic, Key.M, Strings.ToolMosaic);
+        yield return (BadgeTool, EditTool.Badge, Key.B, Strings.ToolBadgeTip);
+        yield return (HighlightTool, EditTool.Highlight, Key.H, Strings.ToolHighlightTip);
+        yield return (CropTool, EditTool.Crop, null, Strings.ToolCropTip);
+    }
+
+    private void SetToolTips()
+    {
+        foreach (var (button, _, key, tip) in Tools())
+            button.ToolTip = key is { } k ? string.Format(Strings.ToolTipKeyFormat, tip, k.ToString()) : tip;
+    }
+
     private void OnToolChecked(object sender, RoutedEventArgs e)
     {
         if (_canvas is null) return;
         CommitTextEdit(focusCanvas: false);
-        _canvas.Tool = sender switch
-        {
-            _ when sender == SelectTool => EditTool.Select,
-            _ when sender == LineTool => EditTool.Line,
-            _ when sender == ArrowTool => EditTool.Arrow,
-            _ when sender == TextTool => EditTool.Text,
-            _ when sender == MosaicTool => EditTool.Mosaic,
-            _ => EditTool.Rectangle,
-        };
+        var chosen = Tools().FirstOrDefault(t => t.Button == sender);
+        _canvas.Tool = chosen.Button is not null ? chosen.Tool : EditTool.Rectangle;
         SyncStyleControls();
         UpdateCommandStates();
     }
@@ -152,6 +167,9 @@ public partial class EditorWindow : Window
             EditTool.Arrow => AnnotationKind.Arrow,
             EditTool.Text => AnnotationKind.Text,
             EditTool.Mosaic => AnnotationKind.Mosaic,
+            EditTool.Badge => AnnotationKind.Badge,
+            EditTool.Highlight => AnnotationKind.Highlight,
+            EditTool.Crop => AnnotationKind.Crop,
             _ => null,
         };
         var support = StyleSupport.For(kind);
@@ -159,17 +177,21 @@ public partial class EditorWindow : Window
         SetEnabled(WidthBox, WidthLabel, support.StrokeWidth);
         SetEnabled(FontBox, FontLabel, support.Font);
         SetEnabled(FontSizeBox, FontSizeLabel, support.FontSize);
+        OutlineCheck.IsEnabled = support.Outline;
 
         ArgbColor.TryParse(_defaults.Color, out var color);
         var width = _defaults.StrokeWidth;
         var font = _defaults.FontFamily;
         var size = _defaults.FontSize;
+        var outline = _defaults.TextOutline;
         switch (selected)
         {
             case RectangleAnnotation r: color = r.Color; width = r.StrokeWidth; break;
             case ArrowAnnotation a: color = a.Color; width = a.StrokeWidth; break;
             case LineAnnotation l: color = l.Color; width = l.StrokeWidth; break;
-            case TextAnnotation t: color = t.Color; font = t.FontFamily; size = t.FontSize; break;
+            case TextAnnotation t: color = t.Color; font = t.FontFamily; size = t.FontSize; outline = t.Outline; break;
+            case BadgeAnnotation b: color = b.Color; size = b.FontSize; break;
+            case HighlightAnnotation h: color = h.Color; break;
         }
 
         _syncing = true;
@@ -184,6 +206,7 @@ public partial class EditorWindow : Window
             }
             FontBox.SelectedItem = font;
             FontSizeBox.SelectedItem = EditorPresets.Nearest(EditorPresets.FontSizes, size);
+            OutlineCheck.IsChecked = outline;
         }
         finally
         {
@@ -224,7 +247,17 @@ public partial class EditorWindow : Window
     {
         if (_syncing || FontSizeBox.SelectedItem is not double size) return;
         _defaults.FontSize = size;
+        _canvas.CurrentFontSize = size;
         ApplyToSelected(a => AnnotationOps.WithStyle(a, fontSize: size));
+    }
+
+    /// <summary>縁取り（V1.4.0）。新しい文字の既定値と、選択中の文字に適用する。</summary>
+    private void OnOutlineChanged(object sender, RoutedEventArgs e)
+    {
+        if (_syncing || _canvas is null) return;
+        var outline = OutlineCheck.IsChecked == true;
+        _defaults.TextOutline = outline;
+        ApplyToSelected(a => AnnotationOps.WithStyle(a, outline: outline));
     }
 
     /// <summary>選択中のオブジェクトのスタイルを変える（1 件の履歴。対象外の項目は WithStyle が無視する）。</summary>
@@ -284,8 +317,21 @@ public partial class EditorWindow : Window
         // 文字の入力中は TextBox に任せる（Enter / Esc は TextBox 側で処理する）。
         if (_textBox is not null && _textBox.IsKeyboardFocusWithin) return;
 
-        var ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
-        var shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+        var modifiers = Keyboard.Modifiers;
+        var ctrl = modifiers.HasFlag(ModifierKeys.Control);
+        var shift = modifiers.HasFlag(ModifierKeys.Shift);
+        // IME がオンでも単キーを判定できるよう、IME が処理したキーは元のキーで見る（V1.4.0）。
+        var key = e.Key switch
+        {
+            Key.ImeProcessed => e.ImeProcessedKey,
+            Key.System => e.SystemKey,
+            _ => e.Key,
+        };
+        if (HandleShortcutKey(key, modifiers, e.IsRepeat))
+        {
+            e.Handled = true;
+            return;
+        }
         switch (e.Key)
         {
             case Key.Z when ctrl && !shift:
@@ -308,6 +354,66 @@ public partial class EditorWindow : Window
         }
     }
 
+    /// <summary>
+    /// エディターのショートカット（V1.4.0。仕様書 §7）。処理した場合 true。
+    /// Ctrl+C / Ctrl+S / Ctrl+Shift+S は出力、修飾キーなしの単キーはツールの切替、矢印キーは選択中のオブジェクトの移動。
+    /// ComboBox にフォーカスがある間は、単キーと矢印キーを ComboBox に任せる。
+    /// </summary>
+    private bool HandleShortcutKey(Key key, ModifierKeys modifiers, bool isRepeat)
+    {
+        var withoutShift = modifiers & ~ModifierKeys.Shift;
+        if (withoutShift == ModifierKeys.Control)
+        {
+            CaptureAction? action = key switch
+            {
+                Key.C when modifiers == ModifierKeys.Control => CaptureAction.Copy,
+                Key.S when modifiers == ModifierKeys.Control => CaptureAction.Save,
+                Key.S => CaptureAction.SaveAs, // Ctrl+Shift+S
+                _ => null,
+            };
+            if (action is null) return false;
+            // 押しっぱなしの自動リピートでは繰り返さない（処理済みにするだけ）。
+            if (!isRepeat) OutputRequested?.Invoke(this, action.Value);
+            return true;
+        }
+        if (IsComboBoxFocused()) return false;
+
+        if (modifiers == ModifierKeys.None && Tools().FirstOrDefault(t => t.Key == key) is { Button: { } button })
+        {
+            button.IsChecked = true;
+            return true;
+        }
+        if (modifiers is ModifierKeys.None or ModifierKeys.Shift)
+        {
+            var step = modifiers == ModifierKeys.Shift ? 10 : 1;
+            (double dx, double dy)? delta = key switch
+            {
+                Key.Left => (-step, 0),
+                Key.Right => (step, 0),
+                Key.Up => (0, -step),
+                Key.Down => (0, step),
+                _ => null,
+            };
+            // 選択が無ければ従来どおり ScrollViewer・ツールボタンへ流す（スクロールなど）。
+            if (delta is { } d) return _canvas.MoveSelected(d.dx, d.dy);
+        }
+        return false;
+    }
+
+    private static bool IsComboBoxFocused() =>
+        Keyboard.FocusedElement is DependencyObject focused &&
+        (focused is ComboBox or ComboBoxItem || FindAncestor<ComboBox>(focused) is not null);
+
+    private static T? FindAncestor<T>(DependencyObject? d) where T : DependencyObject
+    {
+        while (d is not null)
+        {
+            if (d is T t) return t;
+            d = d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d);
+        }
+        return null;
+    }
+
     // ---- 文字の入力・再編集 ----
 
     private void BeginTextEdit(TextAnnotation? existing, PointD position)
@@ -317,8 +423,8 @@ public partial class EditorWindow : Window
         _editingPosition = existing?.Position ?? position;
         ArgbColor.TryParse(_defaults.Color, out var defaultColor);
         _editingStyle = existing is null
-            ? (defaultColor, _defaults.FontFamily, _defaults.FontSize)
-            : (existing.Color, existing.FontFamily, existing.FontSize);
+            ? (defaultColor, _defaults.FontFamily, _defaults.FontSize, _defaults.TextOutline)
+            : (existing.Color, existing.FontFamily, existing.FontSize, existing.Outline);
 
         var scale = _canvas.View.Scale;
         var box = new TextBox
@@ -337,12 +443,10 @@ public partial class EditorWindow : Window
             Padding = new Thickness(0),
             MinWidth = 24,
         };
-        // TextBox の枠（1）と内側の余白（左 2）の分だけずらし、確定後の描画位置と文字の位置を合わせる。
-        Canvas.SetLeft(box, _editingPosition.X * scale - 3);
-        Canvas.SetTop(box, _editingPosition.Y * scale - 1);
+        _textBox = box;
+        PositionTextBox();
         box.PreviewKeyDown += OnTextBoxKeyDown;
         box.LostKeyboardFocus += (_, _) => CommitTextEdit(focusCanvas: false);
-        _textBox = box;
         TextLayer.Children.Add(box);
         _canvas.HiddenId = existing?.Id;
         box.Loaded += (_, _) =>
@@ -382,7 +486,7 @@ public partial class EditorWindow : Window
         if (existing is null)
         {
             if (string.IsNullOrWhiteSpace(text)) return;
-            var created = new TextAnnotation(Guid.NewGuid(), _editingPosition, text, _editingStyle.Color, _editingStyle.Font, _editingStyle.Size);
+            var created = new TextAnnotation(Guid.NewGuid(), _editingPosition, text, _editingStyle.Color, _editingStyle.Font, _editingStyle.Size, _editingStyle.Outline);
             _history.Execute(_history.Current.Add(created));
             _canvas.Select(created.Id);
             return;
@@ -392,6 +496,17 @@ public partial class EditorWindow : Window
             _history.Execute(_history.Current.Remove(current.Id));
         else if (text != current.Text)
             _history.Execute(_history.Current.Replace(current with { Text = text }));
+    }
+
+    /// <summary>入力中の TextBox を今の表示倍率の位置・大きさに合わせる。</summary>
+    private void PositionTextBox()
+    {
+        if (_textBox is not { } box) return;
+        var scale = _canvas.View.Scale;
+        box.FontSize = Math.Max(1, _editingStyle.Size * scale);
+        // TextBox の枠（1）と内側の余白（左 2）の分だけずらし、確定後の描画位置と文字の位置を合わせる。
+        Canvas.SetLeft(box, _editingPosition.X * scale - 3);
+        Canvas.SetTop(box, _editingPosition.Y * scale - 1);
     }
 
     // ---- 表示倍率 ----
@@ -414,9 +529,12 @@ public partial class EditorWindow : Window
         return ZoomMath.Fit(_image.Width, _image.Height, w, h);
     }
 
-    private void SetZoom(double zoom, bool fit, Point? anchor = null)
+    /// <param name="keepTextEdit">
+    /// true なら文字の入力を確定せず、TextBox の位置・大きさだけ合わせる（ウィンドウの大きさ・DPI の変更。V1.4.0）。
+    /// </param>
+    private void SetZoom(double zoom, bool fit, Point? anchor = null, bool keepTextEdit = false)
     {
-        CommitTextEdit(focusCanvas: false);
+        if (!keepTextEdit) CommitTextEdit(focusCanvas: false);
         var oldScale = _canvas.View.Scale;
         PointD? imagePoint = null;
         if (anchor is { } a)
@@ -439,6 +557,7 @@ public partial class EditorWindow : Window
             Scroller.ScrollToVerticalOffset(Scroller.VerticalOffset + now.Y - mouse.Y);
         }
 
+        PositionTextBox();
         _syncing = true;
         try
         {
@@ -449,7 +568,16 @@ public partial class EditorWindow : Window
         {
             _syncing = false;
         }
-        StatusText.Text = string.Format(Strings.EditorStatusFormat, _image.Width, _image.Height, ZoomMath.Format(zoom)) + (fit ? Strings.EditorStatusFitSuffix : "");
+        UpdateStatus();
+    }
+
+    /// <summary>ステータス欄。トリミングがあれば「元 W×H → 出力 W×H」を足す（V1.4.0）。</summary>
+    private void UpdateStatus()
+    {
+        var text = string.Format(Strings.EditorStatusFormat, _image.Width, _image.Height, ZoomMath.Format(_zoom)) + (_fit ? Strings.EditorStatusFitSuffix : "");
+        if (CropMath.EffectiveRect(_history.Current, _image.Width, _image.Height) is { } crop)
+            text += string.Format(Strings.EditorStatusCropFormat, _image.Width, _image.Height, crop.Width, crop.Height);
+        StatusText.Text = text;
     }
 
     private void OnZoomSelected(object sender, SelectionChangedEventArgs e)
@@ -469,14 +597,14 @@ public partial class EditorWindow : Window
 
     private void OnScrollerSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        if (_fit && IsLoaded) SetZoom(FitZoom(), fit: true);
+        if (_fit && IsLoaded) SetZoom(FitZoom(), fit: true, keepTextEdit: true);
     }
 
     protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     {
         base.OnDpiChanged(oldDpi, newDpi);
         // 別の拡大率のモニターへ移動した。「100% = 1 画像ピクセル = 1 物理ピクセル」を保つ。
-        if (IsLoaded) SetZoom(_fit ? FitZoom() : _zoom, _fit);
+        if (IsLoaded) SetZoom(_fit ? FitZoom() : _zoom, _fit, keepTextEdit: true);
     }
 
     // ---- 出力 ----

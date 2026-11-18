@@ -39,12 +39,16 @@
         <Border DockPanel.Dock="Top" Background="#FAFAFA" BorderBrush="#DDD" BorderThickness="0,0,0,1" Padding="8,6">
             <WrapPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,2">
-                    <RadioButton x:Name="SelectTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolSelect}" ToolTip="{x:Static l:Strings.ToolSelectTip}" Checked="OnToolChecked" />
+                    <!-- ツールチップ（単キーの表記を含む）はコードで設定する（V1.4.0）。 -->
+                    <RadioButton x:Name="SelectTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolSelect}" Checked="OnToolChecked" />
                     <RadioButton x:Name="LineTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolLine}" Checked="OnToolChecked" />
                     <RadioButton x:Name="RectangleTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolRectangle}" Checked="OnToolChecked" />
                     <RadioButton x:Name="ArrowTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolArrow}" Checked="OnToolChecked" />
-                    <RadioButton x:Name="TextTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolText}" ToolTip="{x:Static l:Strings.ToolTextTip}" Checked="OnToolChecked" />
+                    <RadioButton x:Name="TextTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolText}" Checked="OnToolChecked" />
                     <RadioButton x:Name="MosaicTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolMosaic}" Checked="OnToolChecked" />
+                    <RadioButton x:Name="BadgeTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolBadge}" Checked="OnToolChecked" />
+                    <RadioButton x:Name="HighlightTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolHighlight}" Checked="OnToolChecked" />
+                    <RadioButton x:Name="CropTool" Style="{StaticResource ToolButton}" Content="{x:Static l:Strings.ToolCrop}" Checked="OnToolChecked" />
                 </StackPanel>
                 <Border Style="{StaticResource Divider}" />
                 <StackPanel Orientation="Horizontal" Margin="0,2">
@@ -65,6 +69,8 @@
                     <ComboBox x:Name="FontBox" Width="130" SelectionChanged="OnFontChanged" />
                     <TextBlock x:Name="FontSizeLabel" Text="{x:Static l:Strings.EditorFontSize}" Style="{StaticResource BarLabel}" />
                     <ComboBox x:Name="FontSizeBox" Width="60" SelectionChanged="OnFontSizeChanged" />
+                    <CheckBox x:Name="OutlineCheck" Content="{x:Static l:Strings.EditorOutline}" ToolTip="{x:Static l:Strings.EditorOutlineTip}"
+                              VerticalAlignment="Center" Margin="10,0,0,0" Checked="OnOutlineChanged" Unchecked="OnOutlineChanged" />
                 </StackPanel>
                 <Border Style="{StaticResource Divider}" />
                 <StackPanel Orientation="Horizontal" Margin="0,2">
@@ -91,7 +97,8 @@
                     <Button Content="{x:Static l:Strings.EditorSaveAs}" Padding="14,5" Margin="0,0,6,0" Click="OnSaveAs" />
                     <Button Content="{x:Static l:Strings.EditorClose}" Padding="14,5" Click="OnCloseClick" />
                 </StackPanel>
-                <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="#555" />
+                <!-- 狭いウィンドウでも出力サイズまで読めるよう折り返す（V1.4.0 レビュー R2） -->
+                <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="#555" TextWrapping="Wrap" />
             </DockPanel>
         </Border>
 

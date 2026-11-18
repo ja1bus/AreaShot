@@ -633,4 +633,67 @@ However, the setting of the folder for sequential numbers could not be saved. Th
   <data name="SettingsErrorWorkFolderInvalid" xml:space="preserve">
     <value>Folder for sequential numbers: the path contains characters that cannot be used.</value>
   </data>
+  <data name="ToolBadge" xml:space="preserve">
+    <value>Number</value>
+  </data>
+  <data name="ToolBadgeTip" xml:space="preserve">
+    <value>Click to place a numbered badge</value>
+  </data>
+  <data name="ToolHighlight" xml:space="preserve">
+    <value>Highlight</value>
+  </data>
+  <data name="ToolHighlightTip" xml:space="preserve">
+    <value>Drag to fill with a translucent color</value>
+  </data>
+  <data name="ToolCrop" xml:space="preserve">
+    <value>Crop</value>
+  </data>
+  <data name="ToolCropTip" xml:space="preserve">
+    <value>Drag to set the output area (Delete removes it)</value>
+  </data>
+  <data name="ToolTipKeyFormat" xml:space="preserve">
+    <value>{0} ({1})</value>
+  </data>
+  <data name="EditorOutline" xml:space="preserve">
+    <value>Outline</value>
+  </data>
+  <data name="EditorOutlineTip" xml:space="preserve">
+    <value>Draw an outline around the text</value>
+  </data>
+  <data name="EditorStatusCropFormat" xml:space="preserve">
+    <value>   Original {0}×{1} → Output {2}×{3}</value>
+  </data>
+  <data name="TrayRepeatCapture" xml:space="preserve">
+    <value>Capture the same area again</value>
+  </data>
+  <data name="TrayTipCaptureFormat" xml:space="preserve">
+    <value>Capture: {0}</value>
+  </data>
+  <data name="TrayTipRepeatFormat" xml:space="preserve">
+    <value>Same area: {0}</value>
+  </data>
+  <data name="RepeatHotkeyLabelFormat" xml:space="preserve">
+    <value>Same area: {0}</value>
+  </data>
+  <data name="RepeatNoRegionBalloon" xml:space="preserve">
+    <value>There is no previous area. Select an area.</value>
+  </data>
+  <data name="RepeatOutsideBalloon" xml:space="preserve">
+    <value>The previous area is outside the current screen. Select an area.</value>
+  </data>
+  <data name="SettingsRepeatShortcut" xml:space="preserve">
+    <value>Same area again</value>
+  </data>
+  <data name="SettingsHotkeyDuplicate" xml:space="preserve">
+    <value>Same combination as the capture shortcut</value>
+  </data>
+  <data name="SettingsErrorRepeatShortcutFormat" xml:space="preserve">
+    <value>Same-area shortcut: {0}</value>
+  </data>
+  <data name="SettingsErrorFolderNotFull" xml:space="preserve">
+    <value>Save folder: enter a full path (for example C:\…).</value>
+  </data>
+  <data name="SettingsErrorWorkFolderNotFull" xml:space="preserve">
+    <value>Folder for sequential numbers: enter a full path (for example C:\…).</value>
+  </data>
 </root>

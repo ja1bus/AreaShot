@@ -73,6 +73,9 @@ public sealed class AppSettings
     /// <summary>キャプチャー開始のグローバルショートカット（"Ctrl+Alt+S" 形式。空は未割当）。</summary>
     public string CaptureHotkey { get; set; } = Shortcut.DefaultCapture.ToString();
 
+    /// <summary>前回と同じ範囲でキャプチャーするグローバルショートカット（V1.4.0。空は未割当）。</summary>
+    public string RepeatCaptureHotkey { get; set; } = Shortcut.DefaultRepeatCapture.ToString();
+
     /// <summary>保存したとき・キーを押しながら離してコピーしたときの通知。</summary>
     public bool ShowSaveNotification { get; set; } = true;
 
@@ -119,6 +122,9 @@ public sealed class EditorDefaults
     public double StrokeWidth { get; set; } = EditorPresets.DefaultStrokeWidth;
     public string FontFamily { get; set; } = EditorPresets.DefaultFontFamily;
     public double FontSize { get; set; } = EditorPresets.DefaultFontSize;
+
+    /// <summary>新しい文字の縁取り（V1.4.0。既存の設定ファイルには無いので false）。</summary>
+    public bool TextOutline { get; set; }
 
     public EditorDefaults Clone() => (EditorDefaults)MemberwiseClone();
 }

@@ -29,9 +29,10 @@ public sealed record SavePlan(FileNamingMode Mode, string Folder, string Templat
 public sealed class ImageOutputService
 {
     private readonly Func<AppSettings> _settings;
-    private readonly Action<string> _notifySaved;
+    private readonly Action<string, (int X, int Y)?> _notifySaved;
 
-    public ImageOutputService(Func<AppSettings> settings, Action<string> notifySaved)
+    /// <param name="notifySaved">保存したパスと、通知を出す基準点（キャプチャーした範囲の中心。V1.4.0）。</param>
+    public ImageOutputService(Func<AppSettings> settings, Action<string, (int X, int Y)?> notifySaved)
     {
         _settings = settings;
         _notifySaved = notifySaved;
@@ -69,13 +70,13 @@ public sealed class ImageOutputService
     }
 
     /// <summary>今の設定の保存先・名前の付け方・形式で保存する（説明は付けない）。保存したパスを返す。</summary>
-    public string? SaveToDefault(BitmapSource image, Window? owner) => Save(image, PlanSave(), null, owner);
+    public string? SaveToDefault(BitmapSource image, Window? owner, (int X, int Y)? anchor = null) => Save(image, PlanSave(), null, owner, anchor);
 
     /// <summary>
     /// <paramref name="plan"/> の保存先・名前の付け方で保存する。保存したパスを返す。
     /// 連番は書き込みの直前に採番し、移す間に同名ファイルができた場合は次の番号で移し直す（上書きしない）。
     /// </summary>
-    public string? Save(BitmapSource image, SavePlan plan, string? description, Window? owner)
+    public string? Save(BitmapSource image, SavePlan plan, string? description, Window? owner, (int X, int Y)? anchor = null)
     {
         var folder = plan.Folder;
         MemoryStream encoded;
@@ -108,7 +109,7 @@ public sealed class ImageOutputService
             Directory.CreateDirectory(folder); // 保存先が無ければ作る
             // 一時ファイルに書き終えてから、上書きせずに移す。移す前に同名ファイルが作られた場合だけ次の名前を取り直す（書き込みの失敗は競合として扱わない）。
             var path = SafeFileWriter.WriteNew(folder, choosePath, encodedImage.WriteTo);
-            _notifySaved(path);
+            _notifySaved(path, anchor);
             return path;
         }
         catch (SequentialNameException ex)
@@ -145,10 +146,10 @@ public sealed class ImageOutputService
     private sealed class SequentialNameException(string message) : Exception(message);
 
     /// <summary>Windows 標準の保存ダイアログで保存する。キャンセルまたは失敗時は null。</summary>
-    public string? SaveAs(BitmapSource image, Window? owner)
+    public string? SaveAs(BitmapSource image, Window? owner, (int X, int Y)? anchor = null)
     {
         var target = ChooseSaveAs(owner);
-        return target is null ? null : SaveAsToTarget(image, target, owner);
+        return target is null ? null : SaveAsToTarget(image, target, owner, anchor);
     }
 
     /// <summary>
@@ -206,14 +207,14 @@ public sealed class ImageOutputService
     }
 
     /// <summary>確定済みの保存先へ画像を書き込む。一時ファイルに書き終えてから置き換えるため、失敗しても既存のファイルは残る。</summary>
-    public string? SaveAsToTarget(BitmapSource image, SaveAsTarget target, Window? owner)
+    public string? SaveAsToTarget(BitmapSource image, SaveAsTarget target, Window? owner, (int X, int Y)? anchor = null)
     {
         var path = target.Path;
         try
         {
             using var encoded = Encode(image, target.Format, target.JpegQuality);
             SafeFileWriter.WriteReplacing(path, encoded.WriteTo);
-            _notifySaved(path);
+            _notifySaved(path, anchor);
             return path;
         }
         catch (Exception ex) when (IsFileError(ex) || IsEncodeError(ex))

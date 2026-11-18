@@ -19,6 +19,12 @@ public enum EditTool
     Arrow,
     Text,
     Mosaic,
+    /// <summary>番号バッジ（V1.4.0）。</summary>
+    Badge,
+    /// <summary>ハイライト（V1.4.0）。</summary>
+    Highlight,
+    /// <summary>トリミング（V1.4.0）。</summary>
+    Crop,
 }
 
 /// <summary>
@@ -41,6 +47,10 @@ public sealed class EditorCanvas : FrameworkElement
     private static readonly Pen SelectionPen = CreateSelectionPen();
     private static readonly Pen HandlePen = Freeze(new Pen(Freeze(new SolidColorBrush(Color.FromRgb(0x00, 0x5F, 0xB8))), 1));
     private static readonly Brush HandleFill = Brushes.White;
+    /// <summary>トリミングの範囲の外の暗幕。</summary>
+    private static readonly Brush CropShade = Freeze(new SolidColorBrush(Color.FromArgb(0x80, 0, 0, 0)));
+    private static readonly Pen CropFrameWhite = Freeze(new Pen(Brushes.White, 1));
+    private static readonly Pen CropFrameDark = Freeze(new Pen(Brushes.Black, 1) { DashStyle = new DashStyle([4, 4], 0) });
 
     private readonly CapturedImage _image;
     private readonly MosaicCache _mosaics;
@@ -66,6 +76,8 @@ public sealed class EditorCanvas : FrameworkElement
         FocusVisualStyle = null;
         ClipToBounds = true;
         Cursor = Cursors.Cross;
+        // 単キーでツールを切り替えるため、キャンバスでは IME を使わない（文字の入力は別の TextBox。V1.4.0）。
+        InputMethod.SetIsInputMethodEnabled(this, false);
         _history.Changed += OnHistoryChanged;
         UpdateScalingMode(1);
     }
@@ -80,6 +92,9 @@ public sealed class EditorCanvas : FrameworkElement
     public ArgbColor CurrentColor { get; set; } = EditorPresets.DefaultColor;
     public double CurrentStrokeWidth { get; set; } = EditorPresets.DefaultStrokeWidth;
 
+    /// <summary>新規の番号バッジの文字サイズ（V1.4.0）。</summary>
+    public double CurrentFontSize { get; set; } = EditorPresets.DefaultFontSize;
+
     public ViewTransform View => _view;
     public MosaicCache Mosaics => _mosaics;
     public bool IsDragging => _drag != DragMode.None;
@@ -92,7 +107,9 @@ public sealed class EditorCanvas : FrameworkElement
             if (_tool == value) return;
             FinishDrag(commit: true);
             _tool = value;
-            if (value != EditTool.Select) Select(null); // 描画ツールへ切り替えたら選択を外す
+            // 描画ツールへ切り替えたら選択を外す。トリミングは既存の範囲を選んで、つまみをすぐ出す（V1.4.0）。
+            if (value == EditTool.Crop) Select(AnnotationOps.CropOf(_history.Current)?.Id);
+            else if (value != EditTool.Select) Select(null);
             Cursor = value == EditTool.Select ? Cursors.Arrow : Cursors.Cross;
         }
     }
@@ -152,7 +169,36 @@ public sealed class EditorCanvas : FrameworkElement
         AnnotationRenderer.DrawAll(dc, _history.Current, _mosaics, _image.Width, _image.Height, _hiddenId);
         dc.Pop();
 
+        DrawCrop(dc);
         if (Selected is { } selected && selected.Id != _hiddenId) DrawSelection(dc, selected);
+    }
+
+    /// <summary>
+    /// トリミングの範囲の外を暗幕で覆い、範囲に枠を描く（V1.4.0）。範囲は出力と同じ整数ピクセル・画像内（<see cref="CropMath"/>）。
+    /// 空（画像の外など）なら何も描かない（出力も全体になる）。
+    /// </summary>
+    private void DrawCrop(DrawingContext dc)
+    {
+        if (CropMath.EffectiveRect(_history.Current, _image.Width, _image.Height) is not { } r) return;
+        var s = _view.Scale;
+        double w = _image.Width * s, h = _image.Height * s;
+        double l = r.Left * s, t = r.Top * s, ri = r.Right * s, b = r.Bottom * s;
+        dc.DrawRectangle(CropShade, null, new Rect(0, 0, w, t));
+        dc.DrawRectangle(CropShade, null, new Rect(0, b, w, Math.Max(0, h - b)));
+        dc.DrawRectangle(CropShade, null, new Rect(0, t, l, Math.Max(0, b - t)));
+        dc.DrawRectangle(CropShade, null, new Rect(ri, t, Math.Max(0, w - ri), Math.Max(0, b - t)));
+        var frame = new Rect(l + 0.5, t + 0.5, Math.Max(0, ri - l - 1), Math.Max(0, b - t - 1));
+        dc.DrawRectangle(null, CropFrameWhite, frame);
+        dc.DrawRectangle(null, CropFrameDark, frame);
+    }
+
+    /// <summary>選択中のオブジェクトを画像座標で (dx, dy) 動かす（矢印キー。1 件の履歴）。動かした場合 true（V1.4.0）。</summary>
+    public bool MoveSelected(double dx, double dy)
+    {
+        if (_drag != DragMode.None || Selected is not { } selected) return false;
+        var moved = AnnotationOps.ApplyHandleDrag(selected, HandleKind.Body, dx, dy);
+        _history.Execute(_history.Current.Replace(moved));
+        return true;
     }
 
     private void DrawSelection(DrawingContext dc, Annotation a)
@@ -168,9 +214,9 @@ public sealed class EditorCanvas : FrameworkElement
                     dc.DrawEllipse(HandleFill, HandlePen, new Point(v.X, v.Y), HandleSize / 2, HandleSize / 2);
                 }
                 break;
-            case RectangleAnnotation or MosaicAnnotation:
+            case RectangleAnnotation or MosaicAnnotation or HighlightAnnotation or CropAnnotation:
                 dc.DrawRectangle(null, SelectionPen, ToRect(bounds));
-                var rectBounds = a is RectangleAnnotation r ? r.Bounds : ((MosaicAnnotation)a).Bounds;
+                var rectBounds = AnnotationOps.RectBoundsOf(a) ?? default;
                 foreach (var h in HandleMath.RectHandles)
                 {
                     var v = _view.ToView(HandleMath.PositionOf(rectBounds, h));
@@ -178,6 +224,10 @@ public sealed class EditorCanvas : FrameworkElement
                 }
                 break;
             case TextAnnotation:
+                dc.DrawRectangle(null, SelectionPen, ToRect(bounds.Inflate(2)));
+                break;
+            case BadgeAnnotation:
+                // 番号はつまみで変形しない（大きさは文字サイズ）。外接正方形の破線だけ。
                 dc.DrawRectangle(null, SelectionPen, ToRect(bounds.Inflate(2)));
                 break;
         }
@@ -229,6 +279,10 @@ public sealed class EditorCanvas : FrameworkElement
                     Select(null);
                     TextEditRequested?.Invoke(null, Clamp(p));
                 }
+                break;
+            case EditTool.Badge:
+                // ダブルクリックの 2 回目では作らない（同じ場所に重ならないように）。
+                if (e.ClickCount < 2) BeginBadge(Clamp(p));
                 break;
             default:
                 BeginCreate(Clamp(p));
@@ -282,14 +336,34 @@ public sealed class EditorCanvas : FrameworkElement
             EditTool.Rectangle => new RectangleAnnotation(id, new RectD(p.X, p.Y, 0, 0), CurrentColor, CurrentStrokeWidth),
             EditTool.Arrow => new ArrowAnnotation(id, p, p, CurrentColor, CurrentStrokeWidth),
             EditTool.Line => new LineAnnotation(id, p, p, CurrentColor, CurrentStrokeWidth),
+            EditTool.Highlight => new HighlightAnnotation(id, new RectD(p.X, p.Y, 0, 0), CurrentColor),
+            EditTool.Crop => new CropAnnotation(id, new RectD(p.X, p.Y, 0, 0)),
             _ => new MosaicAnnotation(id, new RectD(p.X, p.Y, 0, 0)),
         };
         Select(null);
         _history.BeginPreview();
-        _dragBase = _history.Current.Add(created);
+        // トリミングは一覧に最大 1 つ。既存の範囲は置き換える（小さすぎて捨てた場合は CancelPreview で元に戻る）。
+        _dragBase = created is CropAnnotation crop ? _history.Current.ReplaceCrop(crop) : _history.Current.Add(created);
         _history.Preview(_dragBase);
         _drag = DragMode.Create;
         _dragOriginal = created;
+        _dragStart = p;
+        CaptureMouse();
+    }
+
+    /// <summary>
+    /// 番号バッジをクリックした位置に置き、そのまま押したままのドラッグで動かせるようにする（作成と移動を 1 件の履歴にまとめる。V1.4.0）。
+    /// </summary>
+    private void BeginBadge(PointD p)
+    {
+        var badge = new BadgeAnnotation(Guid.NewGuid(), p, AnnotationOps.NextBadgeNumber(_history.Current), CurrentColor, CurrentFontSize);
+        _history.BeginPreview();
+        _dragBase = _history.Current.Add(badge);
+        _history.Preview(_dragBase);
+        Select(badge.Id);
+        _drag = DragMode.Transform;
+        _dragOriginal = badge;
+        _dragHandle = HandleKind.Body;
         _dragStart = p;
         CaptureMouse();
     }

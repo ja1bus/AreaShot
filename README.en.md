@@ -9,9 +9,10 @@ This repository contains the source code of the publicly released AreaShot.
 ## Features
 
 - Area capture from a shortcut or the tray menu (supports multiple monitors and monitors with different scaling)
+- Capture the same area again (default `Ctrl+Alt+R`, or from the tray menu)
 - After capture, a dialog to copy to the clipboard / save to the save folder / save as / open in the image editor / capture again
 - Hold a modifier key while finishing the selection to copy, save or open the editor without the dialog (key assignments can be changed in Settings)
-- Simple editor: lines, rectangles, arrows, text and rectangular mosaic, with undo / redo and non-destructive editing (the original image and annotations are kept separately and combined on output)
+- Simple editor: lines, rectangles, arrows, text (with optional outline), rectangular mosaic, numbers, highlights and crop, with undo / redo, keyboard shortcuts (`Ctrl+C` / `Ctrl+S` / `Ctrl+Shift+S`, tool keys, arrow keys to move) and non-destructive editing (the original image and annotations are kept separately and combined on output)
 - PNG and JPEG output (JPEG quality is adjustable); file names come from a date-time template (e.g. `{yy}{MM}{dd}{HH}{mm}{ss}_capture`), sequential numbers (`001.png`), or sequential numbers with a description entered when saving (`001_Open settings.png`), which keeps images for manuals and guides in the order they were taken
 - Optional start at Windows sign-in
 - English and Japanese UI (follows the Windows display language, or can be fixed in Settings)

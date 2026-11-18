@@ -30,7 +30,7 @@ public static class EditorPresets
 }
 
 /// <summary>どのスタイル項目を変更できるか（ツールバーの有効・無効）。</summary>
-public readonly record struct StyleSupport(bool Color, bool StrokeWidth, bool Font, bool FontSize)
+public readonly record struct StyleSupport(bool Color, bool StrokeWidth, bool Font, bool FontSize, bool Outline = false)
 {
     public static readonly StyleSupport None = default;
 
@@ -40,7 +40,9 @@ public readonly record struct StyleSupport(bool Color, bool StrokeWidth, bool Fo
     public static StyleSupport For(AnnotationKind? kind) => kind switch
     {
         AnnotationKind.Rectangle or AnnotationKind.Arrow or AnnotationKind.Line => new(true, true, false, false),
-        AnnotationKind.Text => new(true, false, true, true),
+        AnnotationKind.Text => new(true, false, true, true, Outline: true),
+        AnnotationKind.Badge => new(true, false, false, true),
+        AnnotationKind.Highlight => new(true, false, false, false),
         _ => None,
     };
 }
